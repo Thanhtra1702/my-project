@@ -3,6 +3,7 @@
 import { adminDb } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { encrypt } from '@/lib/crypto'; // <--- IMPORT HÀM MÃ HÓA VỪA TẠO
+import bcrypt from 'bcrypt';
 
 // 1. Hàm lấy danh sách (Giữ nguyên - Đã bảo mật không select key)
 export async function getAllTenants() {
@@ -48,6 +49,7 @@ export async function saveTenant(formData: FormData) {
       // COALESCE(NULLIF($x, ''), ...) vẫn hoạt động tốt với logic này.
 
       if (password && password.trim() !== "") {
+        const hashedPassword = await bcrypt.hash(password, 10);
         await adminDb.query(
           `UPDATE tenants 
            SET company_name=$1, email=$11, username=$2, password_hash=$3, role=$4, 
@@ -55,7 +57,7 @@ export async function saveTenant(formData: FormData) {
                dify_app_id=$6, token_limit=$7, is_active=$8, 
                limit_start_date = (CASE WHEN $10 = true THEN NOW() ELSE limit_start_date END)
            WHERE id=$9`,
-          [company_name, username, password, role, finalEncryptedKey, difyAppId, tokenLimit, isActive, id, resetCycle, email]
+          [company_name, username, hashedPassword, role, finalEncryptedKey, difyAppId, tokenLimit, isActive, id, resetCycle, email]
         );
       } else {
         await adminDb.query(
@@ -72,10 +74,11 @@ export async function saveTenant(formData: FormData) {
       // --- INSERT (TẠO MỚI) ---
       // Mã hóa luôn khi tạo mới
       const finalPass = password || '123456';
+      const hashedPassword = await bcrypt.hash(finalPass, 10);
       await adminDb.query(
         `INSERT INTO tenants (company_name, email, username, password_hash, role, openai_api_key, dify_app_id, token_limit, is_active, is_bot_enabled, limit_start_date) 
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())`,
-        [company_name, email, username, finalPass, role, finalEncryptedKey, difyAppId, tokenLimit || 100000, isActive, true]
+        [company_name, email, username, hashedPassword, role, finalEncryptedKey, difyAppId, tokenLimit || 100000, isActive, true]
       );
     }
 
