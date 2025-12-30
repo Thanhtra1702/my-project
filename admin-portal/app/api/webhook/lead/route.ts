@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     // - Không lưu lại.
     // - Không gửi mail.
     // - Trả về is_new_conversation = FALSE để Dify biết được phép lấy lịch sử.
-    if (checkExist.rowCount > 0) {
+    if ((checkExist.rowCount ?? 0) > 0) {
       console.log("⛔ Lead đã tồn tại -> Bỏ qua lưu & gửi mail.");
       return NextResponse.json({
         status: 'skipped',
