@@ -4,7 +4,6 @@ import { adminDb } from '@/lib/db';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import bcrypt from 'bcrypt';
 
 // --- 1. LOGIN ---
 export async function login(prevState: any, formData: FormData) {
@@ -13,17 +12,12 @@ export async function login(prevState: any, formData: FormData) {
 
   try {
     const result = await adminDb.query(
-      'SELECT * FROM tenants WHERE username = $1',
-      [username]
+      'SELECT * FROM tenants WHERE username = $1 AND password_hash = $2',
+      [username, password]
     );
     const user = result.rows[0];
 
     if (!user) return { error: 'Sai tài khoản hoặc mật khẩu!' };
-
-    // So sánh mật khẩu nhập vào với mật khẩu đã mã hóa trong DB
-    const isPasswordMatch = await bcrypt.compare(password, user.password_hash);
-    if (!isPasswordMatch) return { error: 'Sai tài khoản hoặc mật khẩu!' };
-
     if (!user.is_active) return { error: 'Tài khoản này đang bị khóa.' };
 
     const cookieStore = await cookies();
