@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS tenants (
     role VARCHAR(50), -- SUPER_ADMIN hoặc TENANT
     openai_api_key TEXT,
     dify_app_id VARCHAR(100),
+    dify_api_key TEXT,
+    dify_api_url TEXT,
     token_limit BIGINT DEFAULT 100000,
     is_active BOOLEAN DEFAULT TRUE,
     is_bot_enabled BOOLEAN DEFAULT TRUE,

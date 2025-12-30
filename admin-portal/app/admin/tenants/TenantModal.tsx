@@ -160,6 +160,38 @@ export default function TenantModal({ tenant, onClose }: { tenant: any, onClose:
                     </p>
                   )}
                 </div>
+
+                {/* DIFY API KEY - ĐÃ BẢO MẬT */}
+                <div>
+                  <label className={labelClass}>Dify API Key</label>
+                  <div className="relative group">
+                    <div className="absolute left-3 top-2.5 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+                    </div>
+                    <input
+                      name="difyApiKey"
+                      placeholder={tenant ? "Đã được bảo mật (Nhập mới để thay đổi)" : "app-..."}
+                      className={`${inputClass} pl-9 font-mono text-xs bg-indigo-50/30 border-indigo-100 focus:border-indigo-400 focus:ring-indigo-500/20`}
+                      autoComplete="off"
+                    />
+                  </div>
+                </div>
+
+                {/* DIFY API URL */}
+                <div>
+                  <label className={labelClass}>Dify API URL (Optional)</label>
+                  <div className="relative group">
+                    <div className="absolute left-3 top-2.5 text-slate-400 group-hover:text-purple-500 transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                    </div>
+                    <input
+                      name="difyApiUrl"
+                      defaultValue={tenant?.dify_api_url}
+                      placeholder="https://api.dify.ai/v1"
+                      className={`${inputClass} pl-9 font-mono text-xs bg-purple-50/30 border-purple-100 focus:border-purple-400 focus:ring-purple-500/20`}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 

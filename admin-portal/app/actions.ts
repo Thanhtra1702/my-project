@@ -4,6 +4,7 @@ import { adminDb } from '@/lib/db';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { decrypt } from '@/lib/crypto';
 
 // --- 1. LOGIN ---
 export async function login(prevState: any, formData: FormData) {
@@ -58,17 +59,35 @@ export async function toggleBotStatus(currentStatus: boolean) {
 export async function getChatHistory(conversation_id: string, tenant_id: number) {
   if (!conversation_id) return [];
 
-  // Lấy API Key từ biến môi trường
-  const apiUrl = process.env.DIFY_API_URL;
-  const apiKey = process.env.DIFY_API_KEY;
-
-  if (!apiUrl || !apiKey) {
-    console.error("❌ Thiếu cấu hình DIFY_API_URL hoặc DIFY_API_KEY");
-    return [];
-  }
-
   try {
-    // 🟢 BƯỚC 1: Lấy user_id chính chủ từ Database
+    // 🟢 BƯỚC 1: Lấy cấu hình Dify của Tenant từ Database
+    const tenantRes = await adminDb.query(
+      'SELECT dify_api_key, dify_api_url FROM tenants WHERE id = $1',
+      [tenant_id]
+    );
+    const tenantConfig = tenantRes.rows[0];
+
+    let apiKey = '';
+    let apiUrl = '';
+
+    if (tenantConfig?.dify_api_key) {
+      apiKey = decrypt(tenantConfig.dify_api_key);
+    } else {
+      apiKey = process.env.DIFY_API_KEY || '';
+    }
+
+    if (tenantConfig?.dify_api_url) {
+      apiUrl = tenantConfig.dify_api_url;
+    } else {
+      apiUrl = process.env.DIFY_API_URL || '';
+    }
+
+    if (!apiUrl || !apiKey) {
+      console.error(`❌ Thiếu cấu hình Dify cho tenant ${tenant_id}`);
+      return [];
+    }
+
+    // 🟢 BƯỚC 2: Lấy user_id chính chủ từ Database
     const leadRes = await adminDb.query(
       'SELECT user_id FROM leads WHERE conversation_id = $1',
       [conversation_id]
@@ -77,7 +96,7 @@ export async function getChatHistory(conversation_id: string, tenant_id: number)
     // Nếu không tìm thấy, dùng tạm 'abc-123' (fallback)
     const realUser = leadRes.rows[0]?.user_id || 'abc-123';
 
-    // 🟢 BƯỚC 2: Gọi API sang Dify
+    // 🟢 BƯỚC 3: Gọi API sang Dify
     // Lưu ý: Dùng endpoint /messages (Dành cho Chatbot)
     const fullUrl = `${apiUrl}/messages?conversation_id=${conversation_id}&user=${realUser}&limit=100`;
 

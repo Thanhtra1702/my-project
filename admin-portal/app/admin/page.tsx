@@ -30,7 +30,7 @@ export default async function AdminDashboard() {
   // QUERY CẬP NHẬT: Lấy thêm t.token_limit
   const tenantsRes = await adminDb.query(`
     SELECT 
-        t.id, t.company_name, t.email, t.username, t.role, t.is_active, t.created_at, t.token_limit, t.dify_app_id, t.openai_api_key,
+        t.id, t.company_name, t.email, t.username, t.role, t.is_active, t.created_at, t.token_limit, t.dify_app_id, t.openai_api_key, t.dify_api_url,
         COALESCE(SUM(tl.total_tokens), 0) as total_usage
     FROM tenants t
     LEFT JOIN token_logs tl ON t.id = tl.tenant_id
