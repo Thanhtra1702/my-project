@@ -32,6 +32,11 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@admin-db:5432/${POSTGRES_DB}
       DB_SSL: 'false'
       NODE_ENV: production
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      DIFY_API_URL: ${DIFY_API_URL}
+      DIFY_API_KEY: ${DIFY_API_KEY}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
     depends_on:
       admin-db:
         condition: service_healthy
