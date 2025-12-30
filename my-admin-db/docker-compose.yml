@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  admin_db:
+    image: postgres:15-alpine
+    container_name: admin_portal_db
+    restart: always
+    environment:
+      POSTGRES_USER: admin_user
+      POSTGRES_PASSWORD: admin_pass_secure  # Đặt mật khẩu của bạn
+      POSTGRES_DB: admin_portal_db
+    ports:
+      - "5433:5432"  # Map cổng 5432 trong Docker ra cổng 5433 máy thật
+    volumes:
+      - ./pg_data:/var/lib/postgresql/data
