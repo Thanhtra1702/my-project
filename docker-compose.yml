@@ -12,8 +12,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-admin_portal_db}
     volumes:
       - ./my-admin-db/pg_data:/var/lib/postgresql/data
-      # Optionally include initial SQL script
-      # - ./my-admin-db/admin_backup.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./my-admin-db/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - admin-network
     healthcheck:
