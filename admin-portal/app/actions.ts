@@ -153,23 +153,27 @@ export async function getChatHistory(conversation_id: string, tenant_id: number)
     );
     const realUser = leadRes.rows[0]?.user_id || 'abc-123';
 
-    // 🟢 BƯỚC 3: Gọi API sang Dify
-    // Nếu ở Production, ta gọi qua IP Gateway nhưng giữ Host Header để khớp SSL/Nginx routing
-    const fetchUrl = process.env.NODE_ENV === 'production'
-      ? apiUrl.replace(domain, '172.17.0.1')
-      : apiUrl;
+    // 3. Quyết định URL thực tế để gọi
+    const fullUrl = `${apiUrl}/messages?conversation_id=${conversation_id}&user=${realUser}&limit=100`;
 
-    const fullUrl = `${fetchUrl}/messages?conversation_id=${conversation_id}&user=${realUser}&limit=100`;
+    // GIẢI PHÁP CUỐI CÙNG: Cho phép bỏ qua lỗi SSL khi gọi nội bộ trên VPS
+    if (process.env.NODE_ENV === 'production') {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+    }
 
     const res = await fetch(fullUrl, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'Host': domain, // GIẢI PHÁP QUYẾT ĐỊNH: Giúp Nginx nhận diện đúng Tenant mà không bị lỗi SSL
       },
       cache: 'no-store'
     });
+
+    // Trả lại trạng thái bảo mật sau khi gọi xong
+    if (process.env.NODE_ENV === 'production') {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = '1';
+    }
 
     if (!res.ok) {
       const errorText = await res.text();
