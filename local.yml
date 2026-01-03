@@ -1,0 +1,997 @@
+app:
+  description: ''
+  icon: 🤖
+  icon_background: '#FFEAD5'
+  mode: advanced-chat
+  name: Automation Bot
+  use_icon_as_answer_icon: false
+dependencies:
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/ollama:0.1.1@f3a8b649027d1bd13e67df96f3463a601c16628da4292705528d28d97d96b263
+    version: null
+kind: app
+version: 0.5.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: false
+      fileUploadConfig:
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        image_file_batch_limit: 10
+        image_file_size_limit: 10
+        single_chunk_attachment_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: code
+        targetType: http-request
+      id: 1766730744664-source-1766724545175-target
+      selected: false
+      source: '1766730744664'
+      sourceHandle: source
+      target: '1766724545175'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: http-request
+        targetType: code
+      id: 1766724545175-source-1766730934635-target
+      source: '1766724545175'
+      sourceHandle: source
+      target: '1766730934635'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: code
+        targetType: answer
+      id: 1766730934635-source-1766111585695-target
+      source: '1766730934635'
+      sourceHandle: source
+      target: '1766111585695'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: http-request
+        targetType: code
+      id: 1766727212140-source-1766730288442-target
+      selected: false
+      source: '1766727212140'
+      sourceHandle: source
+      target: '1766730288442'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: code
+        targetType: http-request
+      id: 1766730934635-source-1766725124753-target
+      source: '1766730934635'
+      sourceHandle: source
+      target: '1766725124753'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: code
+        targetType: if-else
+      id: 1766629203040-source-1766816629502-target
+      source: '1766629203040'
+      sourceHandle: source
+      target: '1766816629502'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: if-else
+        targetType: answer
+      id: 1766816629502-true-1766629816265-target
+      source: '1766816629502'
+      sourceHandle: 'true'
+      target: '1766629816265'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: if-else
+        targetType: http-request
+      id: 1766816629502-false-1766727212140-target
+      source: '1766816629502'
+      sourceHandle: 'false'
+      target: '1766727212140'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: code
+        targetType: if-else
+      id: 1766730288442-source-1766629775100-target
+      source: '1766730288442'
+      sourceHandle: source
+      target: '1766629775100'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: if-else
+        targetType: answer
+      id: 1766629775100-aaccb581-a4c2-4a86-86c3-970ef3886188-1766745801622-target
+      source: '1766629775100'
+      sourceHandle: aaccb581-a4c2-4a86-86c3-970ef3886188
+      target: '1766745801622'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: knowledge-retrieval
+        targetType: code
+      id: 1766032368917-source-1766730744664-target
+      source: '1766032368917'
+      sourceHandle: source
+      target: '1766730744664'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: if-else
+        targetType: http-request
+      id: 1766629775100-false-1766646542441-target
+      source: '1766629775100'
+      sourceHandle: 'false'
+      target: '1766646542441'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: start
+        targetType: code
+      id: 1766031909572-source-1766629203040-target
+      source: '1766031909572'
+      sourceHandle: source
+      target: '1766629203040'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: http-request
+        targetType: code
+      id: 1766646542441-source-1767036338106-target
+      source: '1766646542441'
+      sourceHandle: source
+      target: '1767036338106'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: code
+        targetType: if-else
+      id: 1767036338106-source-1767036194796-target
+      source: '1767036338106'
+      sourceHandle: source
+      target: '1767036194796'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: if-else
+        targetType: knowledge-retrieval
+      id: 1767036194796-true-1766032368917-target
+      source: '1767036194796'
+      sourceHandle: 'true'
+      target: '1766032368917'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: if-else
+        targetType: http-request
+      id: 1767036194796-false-1767035068124-target
+      source: '1767036194796'
+      sourceHandle: 'false'
+      target: '1767035068124'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: if-else
+        targetType: knowledge-retrieval
+      id: 1767036194796-false-1766032368917-target
+      source: '1767036194796'
+      sourceHandle: 'false'
+      target: '1766032368917'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: http-request
+        targetType: code
+      id: 1767035068124-source-1766730744664-target
+      source: '1767035068124'
+      sourceHandle: source
+      target: '1766730744664'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        selected: false
+        title: User Input
+        type: start
+        variables:
+        - default: ''
+          hint: ''
+          label: Họ và tên
+          max_length: 100
+          options: []
+          placeholder: ''
+          required: true
+          type: text-input
+          variable: name
+        - default: ''
+          hint: ''
+          label: Số điện thoại
+          max_length: 15
+          options: []
+          placeholder: ''
+          required: true
+          type: text-input
+          variable: phone
+        - default: ''
+          hint: ''
+          label: Vấn đề cần hỗ trợ
+          max_length: 256
+          options: []
+          placeholder: ''
+          required: true
+          type: text-input
+          variable: need
+        - default: '2'
+          hide: true
+          hint: ''
+          label: ID tenant
+          max_length: 48
+          options: []
+          placeholder: ''
+          required: false
+          type: number
+          variable: tenant_id
+      height: 187
+      id: '1766031909572'
+      position:
+        x: -548.5523987299616
+        y: 112.09131436446657
+      positionAbsolute:
+        x: -548.5523987299616
+        y: 112.09131436446657
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        dataset_ids:
+        - RLIGbq3RuwCnSn6PHF+X7LjkuaIiE04ozrWoG/W3HPqPh39qbtDRIYPdd8WnwbK7
+        metadata_filtering_mode: disabled
+        metadata_model_config:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: gemini-2.5-flash-lite
+          provider: langgenius/gemini/google
+        multiple_retrieval_config:
+          reranking_enable: false
+          reranking_mode: weighted_score
+          reranking_model:
+            model: bge-reranker
+            provider: langgenius/xinference/xinference
+          score_threshold: null
+          top_k: 5
+          weights:
+            keyword_setting:
+              keyword_weight: 0.5
+            vector_setting:
+              embedding_model_name: bge-m3
+              embedding_provider_name: langgenius/ollama/ollama
+              vector_weight: 0.5
+            weight_type: customized
+        query_attachment_selector: []
+        query_variable_selector:
+        - sys
+        - query
+        retrieval_mode: multiple
+        selected: false
+        title: Get_Context
+        type: knowledge-retrieval
+      height: 90
+      id: '1766032368917'
+      position:
+        x: 2023.1649583674616
+        y: 236.05039936541954
+      positionAbsolute:
+        x: 2023.1649583674616
+        y: 236.05039936541954
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '{{#1766730934635.answer#}}'
+        selected: false
+        title: Reply
+        type: answer
+        variables: []
+      height: 102
+      id: '1766111585695'
+      position:
+        x: 3164.3273198129145
+        y: 219.53524045679322
+      positionAbsolute:
+        x: 3164.3273198129145
+        y: 219.53524045679322
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        code: "function main({phone_input}) {\n    // 1. Vệ sinh dữ liệu: Xóa khoảng\
+          \ trắng, chuyển về chuỗi\n    const phone = (phone_input || \"\").trim();\n\
+          \n    // 2. Check cơ bản: Phải đủ 10 số, bắt đầu bằng 0\n    // Nếu không\
+          \ thỏa mãn format này -> Loại ngay\n    const basicRegex = /^0\\d{9}$/;\n\
+          \    if (!basicRegex.test(phone)) {\n        return { is_valid: false };\n\
+          \    }\n\n    // --- CÁC BƯỚC KIỂM TRA NÂNG CAO ---\n\n    // 3. Check đầu\
+          \ số nhà mạng Việt Nam hợp lệ\n    // Chỉ chấp nhận: 03 (Viettel), 05 (Vietnamobile),\
+          \ 07 (Mobi), 08 (Vina/Viettel), 09 (Cổ)\n    // Loại bỏ các đầu số lạ như\
+          \ 01, 02, 04, 06...\n    const validPrefixes = [\"03\", \"05\", \"07\",\
+          \ \"08\", \"09\"];\n    const currentPrefix = phone.substring(0, 2); //\
+          \ Lấy 2 số đầu\n    \n    if (!validPrefixes.includes(currentPrefix)) {\n\
+          \        return { is_valid: false };\n    }\n\n    // 4. Check Blacklist\
+          \ (Các số spam điển hình vượt qua được Regex)\n    const blacklist = [\n\
+          \        \"0123456789\",\n        \"0987654321\", \n        \"0900000000\"\
+          , \n        \"0000000000\", \n        \"0888888888\" \n    ];\n    \n  \
+          \  if (blacklist.includes(phone)) {\n        return { is_valid: false };\n\
+          \    }\n\n    // 5. Check số lặp hoàn toàn (Ví dụ: 0333333333)\n    // Logic:\
+          \ Tách chuỗi thành mảng ký tự, kiểm tra xem tất cả có giống ký tự đầu tiên\
+          \ không\n    const isRepeated = phone.split('').every(char => char === phone[0]);\n\
+          \    if (isRepeated) {\n        return { is_valid: false };\n    }\n\n \
+          \   // Nếu vượt qua tất cả các ải trên -> Hợp lệ\n    return {\n       \
+          \ is_valid: true\n    };\n}"
+        code_language: javascript
+        outputs:
+          is_valid:
+            children: null
+            type: boolean
+        selected: false
+        title: Spam_Check
+        type: code
+        variables:
+        - value_selector:
+          - '1766031909572'
+          - phone
+          value_type: string
+          variable: phone_input
+      height: 52
+      id: '1766629203040'
+      position:
+        x: -268.09092586707004
+        y: 133.09131436446657
+      positionAbsolute:
+        x: -268.09092586707004
+        y: 133.09131436446657
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        cases:
+        - case_id: aaccb581-a4c2-4a86-86c3-970ef3886188
+          conditions:
+          - comparison_operator: is
+            id: 387f0e85-9d7e-4f54-b7e0-7b3338141146
+            value: false
+            varType: boolean
+            variable_selector:
+            - '1766730288442'
+            - allowed
+          id: aaccb581-a4c2-4a86-86c3-970ef3886188
+          logical_operator: and
+        selected: false
+        title: Check_Allowed
+        type: if-else
+      height: 124
+      id: '1766629775100'
+      position:
+        x: 877.811800833606
+        y: 214.9152390119805
+      positionAbsolute:
+        x: 877.811800833606
+        y: 214.9152390119805
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: Số định thoại của Quý khách chưa đúng định dạng. Hệ thống xin phép
+          từ chối truy cập. Xin hãy nhập lại.
+        selected: false
+        title: Spam_Notify
+        type: answer
+        variables: []
+      height: 132
+      id: '1766629816265'
+      position:
+        x: 314.6731770643494
+        y: -7.811733145867549
+      positionAbsolute:
+        x: 314.6731770643494
+        y: -7.811733145867549
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - id: key-value-39
+            key: ''
+            type: text
+            value: "{\n  \"conversation_id\": \"{{#sys.conversation_id#}}\",\n  \"\
+              user_id\": \"{{#sys.user_id#}}\",\n  \"customer_name\": \"{{#1766031909572.name#}}\"\
+              ,\n  \"phone_number\": \"{{#1766031909572.phone#}}\",\n  \"note\": \"\
+              {{#1766031909572.need#}}\",\n  \"tenant_id\": {{#1766031909572.tenant_id#}}\n\
+              }"
+          type: json
+        headers: ''
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: false
+        ssl_verify: true
+        timeout:
+          connect: 10
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: Add_Lead
+        type: http-request
+        url: http://host.docker.internal:3000/api/webhook/lead
+        variables: []
+      height: 137
+      id: '1766646542441'
+      position:
+        x: 1186.2810737956697
+        y: 293.0267271517789
+      positionAbsolute:
+        x: 1186.2810737956697
+        y: 293.0267271517789
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        authorization:
+          config:
+            api_key: '{{#1766730288442.api_key#}}'
+            type: bearer
+          type: api-key
+        body:
+          data:
+          - id: key-value-123
+            key: ''
+            type: text
+            value: "{\n  \"model\": \"gpt-4o-mini\",\n  \"messages\": {{#1766730744664.final_messages#}},\n\
+              \  \"temperature\": 0.3,\n  \"max_tokens\": 800,\n  \"stream\": false\n\
+              }"
+          type: json
+        headers: ''
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: Open_AI
+        type: http-request
+        url: https://api.openai.com/v1/chat/completions
+        variables: []
+      height: 137
+      id: '1766724545175'
+      position:
+        x: 2588.9836428651884
+        y: 337.27878576652955
+      positionAbsolute:
+        x: 2588.9836428651884
+        y: 337.27878576652955
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - id: key-value-220
+            key: ''
+            type: text
+            value: "{\n  \"tenant_id\": {{#1766031909572.tenant_id#}},\n  \"conversation_id\"\
+              : \"{{#sys.conversation_id#}}\",\n  \"input\": {{#1766730934635.prompt_tokens#}},\n\
+              \  \"output\": {{#1766730934635.completion_tokens#}},\n  \"total\":\
+              \ {{#1766730934635.total_tokens#}}\n}"
+          type: json
+        headers: ''
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: Report_Usage
+        type: http-request
+        url: http://host.docker.internal:3000/api/tenant/log-token
+        variables: []
+      height: 137
+      id: '1766725124753'
+      position:
+        x: 3164.3273198129145
+        y: 392.8495691870992
+      positionAbsolute:
+        x: 3164.3273198129145
+        y: 392.8495691870992
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - id: key-value-411
+            key: ''
+            type: text
+            value: "{\n  \"tenant_id\": {{#1766031909572.tenant_id#}}\n}"
+          type: json
+        headers: ''
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: get_key
+        type: http-request
+        url: http://host.docker.internal:3000/api/tenant/config
+        variables: []
+      height: 137
+      id: '1766727212140'
+      position:
+        x: 314.6731770643494
+        y: 214.9152390119805
+      positionAbsolute:
+        x: 314.6731770643494
+        y: 214.9152390119805
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        code: "function main({ raw_body }) {\n    try {\n        // 1. Khởi tạo biến\
+          \ data\n        let data = raw_body;\n\n        // 2. Nếu là chuỗi (String)\
+          \ thì parse sang JSON Object\n        if (typeof raw_body === 'string')\
+          \ {\n            try {\n                data = JSON.parse(raw_body);\n \
+          \           } catch (e) {\n                // Nếu lỗi format, trả về không\
+          \ cho phép\n                return {\n                    allowed: false,\n\
+          \                    api_key: \"\"\n                };\n            }\n\
+          \        }\n\n        // 3. Kiểm tra an toàn xem có phải object không\n\
+          \        if (!data || typeof data !== 'object') {\n            return {\n\
+          \                allowed: false,\n                api_key: \"\"\n      \
+          \      };\n        }\n\n        // 4. TRẢ VỀ KẾT QUẢ (Chỉ giữ lại allowed\
+          \ và api_key)\n        return {\n            allowed: data.allowed || false,\
+          \ // Biến này để Node IF kiểm tra\n            api_key: data.api_key ||\
+          \ \"\"     // Biến này để dùng cho Node LLM\n        };\n\n    } catch (e)\
+          \ {\n        // Lỗi hệ thống khác\n        return {\n            allowed:\
+          \ false,\n            api_key: \"\"\n        };\n    }\n}"
+        code_language: javascript
+        outputs:
+          allowed:
+            children: null
+            type: boolean
+          api_key:
+            children: null
+            type: string
+        selected: false
+        title: Parse_Key
+        type: code
+        variables:
+        - value_selector:
+          - '1766727212140'
+          - body
+          value_type: string
+          variable: raw_body
+      height: 52
+      id: '1766730288442'
+      position:
+        x: 593.8523161866262
+        y: 214.9152390119805
+      positionAbsolute:
+        x: 593.8523161866262
+        y: 214.9152390119805
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        code: "import json\n\ndef main(docs: list, history_res, user_query: str):\n\
+          \    # --- 1. XỬ LÝ NGỮ CẢNH (RAG) ---\n    context = \"\"\n    if isinstance(docs,\
+          \ list):\n        context = \"\\n\\n\".join([d.get('content', '') if isinstance(d,\
+          \ dict) else str(d) for d in docs])\n    \n    # --- 2. THIẾT LẬP SYSTEM\
+          \ PROMPT ---\n    system_content = (\n        \"Bạn là trợ lý AI hỗ trợ\
+          \ tra cứu thông tin nội bộ.\\n\"\n        \"Quy tắc:\\n\"\n        \"1.\
+          \ Chỉ trả lời dựa trên thông tin trong phần 'NGỮ CẢNH'. Tuyệt đối không\
+          \ sử dụng kiến thức bên ngoài.\\n\"\n        \"2. Trả lời ngắn gọn, súc\
+          \ tích, đi thẳng vào vấn đề. Không chào hỏi thừa.\\n\"\n        \"3. Nếu\
+          \ thông tin không có trong ngữ cảnh, chỉ trả lời duy nhất câu: 'Thông tin\
+          \ này không có trong tài liệu.'\\n\\n\"\n        f\"THÔNG TIN NGỮ CẢNH:\
+          \ {context}\"\n    )\n    \n    messages = [{\"role\": \"system\", \"content\"\
+          : system_content}]\n    \n    # --- 3. GIẢI MÃ LỊCH SỬ AN TOÀN ---\n   \
+          \ history_list = []\n    if isinstance(history_res, dict):\n        # Lấy\
+          \ body từ node HTTP\n        body_raw = history_res.get('body', '{}')\n\
+          \        try:\n            body_json = json.loads(body_raw) if isinstance(body_raw,\
+          \ str) else body_raw\n            history_list = body_json.get('data', [])\n\
+          \        except:\n            pass\n    elif isinstance(history_res, str):\n\
+          \        try:\n            body_json = json.loads(history_res)\n       \
+          \     history_list = body_json.get('data', [])\n        except:\n      \
+          \      pass\n\n    # --- 4. ĐÓNG GÓI LỊCH SỬ (QUAN TRỌNG: ĐẢO NGƯỢC THỨ\
+          \ TỰ) ---\n    if isinstance(history_list, list) and len(history_list) >\
+          \ 0:\n        # Lấy 10 tin gần nhất và đảo ngược để đúng thứ tự thời gian\
+          \ (Cũ trước - Mới sau)\n        for item in history_list[:10][::-1]: \n\
+          \            if isinstance(item, dict):\n                # Dify API dùng\
+          \ 'query' cho User và 'answer' cho Bot\n                q = item.get('query')\n\
+          \                a = item.get('answer')\n                if q: messages.append({\"\
+          role\": \"user\", \"content\": q})\n                if a: messages.append({\"\
+          role\": \"assistant\", \"content\": a})\n\n    # --- 5. THÊM CÂU HỎI HIỆN\
+          \ TẠI ---\n    messages.append({\"role\": \"user\", \"content\": str(user_query)})\n\
+          \n    return {\n        \"final_messages\": json.dumps(messages, ensure_ascii=False)\n\
+          \    }"
+        code_language: python3
+        outputs:
+          final_messages:
+            children: null
+            type: string
+        selected: false
+        title: Format_Context
+        type: code
+        variables:
+        - value_selector:
+          - '1766032368917'
+          - result
+          value_type: array[object]
+          variable: docs
+        - value_selector:
+          - sys
+          - query
+          value_type: string
+          variable: user_query
+        - value_selector:
+          - '1767035068124'
+          - body
+          value_type: string
+          variable: history_res
+      height: 52
+      id: '1766730744664'
+      position:
+        x: 2301.569822300626
+        y: 337.27878576652955
+      positionAbsolute:
+        x: 2301.569822300626
+        y: 337.27878576652955
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        code: "function main({raw_body}) {\n    const data = typeof raw_body === 'string'\
+          \ ? JSON.parse(raw_body) : raw_body;\n    \n    return {\n        answer:\
+          \ data.choices[0].message.content,\n        prompt_tokens: data.usage.prompt_tokens,\n\
+          \        completion_tokens: data.usage.completion_tokens,\n        total_tokens:\
+          \ data.usage.total_tokens\n    };\n}"
+        code_language: javascript
+        outputs:
+          answer:
+            children: null
+            type: string
+          completion_tokens:
+            children: null
+            type: number
+          prompt_tokens:
+            children: null
+            type: number
+          total_tokens:
+            children: null
+            type: number
+        selected: false
+        title: Parse_OpenAI
+        type: code
+        variables:
+        - value_selector:
+          - '1766724545175'
+          - body
+          value_type: string
+          variable: raw_body
+      height: 52
+      id: '1766730934635'
+      position:
+        x: 2874.105552976811
+        y: 337.27878576652955
+      positionAbsolute:
+        x: 2874.105552976811
+        y: 337.27878576652955
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: Xin lỗi, dịch vụ Chatbot hiện đang ngừng hoạt động!
+        selected: false
+        title: Chatbot_Stop
+        type: answer
+        variables: []
+      height: 116
+      id: '1766745801622'
+      position:
+        x: 1186.2810737956697
+        y: 32.65904511984249
+      positionAbsolute:
+        x: 1186.2810737956697
+        y: 32.65904511984249
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: is
+            id: dd5b5459-3954-4f21-be71-430f18cc47b1
+            value: false
+            varType: boolean
+            variable_selector:
+            - '1766629203040'
+            - is_valid
+          id: 'true'
+          logical_operator: and
+        selected: false
+        title: Check_Spam
+        type: if-else
+      height: 124
+      id: '1766816629502'
+      position:
+        x: 23.9422953440901
+        y: 133.09131436446657
+      positionAbsolute:
+        x: 23.9422953440901
+        y: 133.09131436446657
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        authorization:
+          config:
+            api_key: app-MqK7A1dqUcC3Bqh07vMRMDjf
+            type: bearer
+          type: api-key
+        body:
+          data: []
+          type: none
+        headers: Authorization:Bearer app-MqK7A1dqUcC3Bqh07vMRMDjf
+        method: get
+        params: 'user:{{#sys.user_id#}}
+
+          conversation_id:{{#sys.conversation_id#}}
+
+          limit:6'
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: Get_History
+        type: http-request
+        url: http://host.docker.internal/v1/messages
+        variables: []
+      height: 137
+      id: '1767035068124'
+      position:
+        x: 2023.1649583674616
+        y: 410.95176303242204
+      positionAbsolute:
+        x: 2023.1649583674616
+        y: 410.95176303242204
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: is
+            id: 69fac3e2-79ed-4208-ac1f-fae9ce2c96c9
+            value: true
+            varType: boolean
+            variable_selector:
+            - '1767036338106'
+            - is_new
+          id: 'true'
+          logical_operator: and
+        selected: false
+        title: Check_New_Chat
+        type: if-else
+      height: 124
+      id: '1767036194796'
+      position:
+        x: 1744.2195077978936
+        y: 293.0267271517789
+      positionAbsolute:
+        x: 1744.2195077978936
+        y: 293.0267271517789
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        code: "function main({raw_body}) {\n    try {\n        // 1. Parse chuỗi JSON\
+          \ thành Object\n        const data = typeof raw_body === 'string' ? JSON.parse(raw_body)\
+          \ : raw_body;\n        \n        // 2. Trả về đúng biến boolean is_new_conversation\n\
+          \        // (Mặc định là false nếu không tìm thấy để an toàn)\n        return\
+          \ {\n            is_new: data.is_new_conversation || false\n        };\n\
+          \    } catch (e) {\n        return { is_new: false };\n    }\n}"
+        code_language: javascript
+        outputs:
+          is_new:
+            children: null
+            type: boolean
+        selected: false
+        title: Parse_Webhook
+        type: code
+        variables:
+        - value_selector:
+          - '1766646542441'
+          - body
+          value_type: string
+          variable: raw_body
+      height: 52
+      id: '1767036338106'
+      position:
+        x: 1462.7714913834511
+        y: 293.0267271517789
+      positionAbsolute:
+        x: 1462.7714913834511
+        y: 293.0267271517789
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    viewport:
+      x: -626.311021183021
+      y: 60.480201087464195
+      zoom: 0.5743491774985192
+  rag_pipeline_variables: []

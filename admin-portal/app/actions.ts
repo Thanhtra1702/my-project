@@ -141,6 +141,10 @@ export async function getChatHistory(conversation_id: string, tenant_id: number)
       return [];
     }
 
+    // DEBUG LOG (Sẽ xóa sau khi tìm được lỗi)
+    const maskedKey = apiKey ? `${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)}` : 'EMPTY';
+    console.log(`🔍 [Debug] Calling Dify: URL=${apiUrl}, Key=${maskedKey}, KeyLength=${apiKey.length}`);
+
     // 🟢 BƯỚC 2: Lấy user_id chính chủ từ Database
     const leadRes = await adminDb.query(
       'SELECT user_id FROM leads WHERE conversation_id = $1',
