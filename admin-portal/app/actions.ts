@@ -132,45 +132,48 @@ export async function getChatHistory(conversation_id: string, tenant_id: number)
     }
 
     // 2. Lấy API URL
-    if (process.env.NODE_ENV === 'production') {
-      // Dùng IP của Docker Gateway (172.17.0.1) để gọi thẳng vào port 80 của Host 
-      // Tránh việc đi vòng qua Domain công cộng bị Nginx redirect làm mất Header Authorization
-      apiUrl = 'http://172.17.0.1/v1';
-    } else {
-      apiUrl = tenantConfig?.dify_api_url || process.env.DIFY_API_URL || 'http://localhost/v1';
-    }
+    const originalUrl = tenantConfig?.dify_api_url || process.env.DIFY_API_URL || 'http://localhost/v1';
+    apiUrl = originalUrl;
 
     if (!apiUrl || !apiKey) {
       console.error(`❌ Thiếu cấu hình Dify cho tenant ${tenant_id}`);
       return [];
     }
 
-    console.log(`📡 Fetching Dify: Tenant=${tenant_id} Endpoint=${apiUrl}/messages`);
+    // Phân tích domain để dùng cho kỹ thuật Routing
+    const urlObj = new URL(apiUrl);
+    const domain = urlObj.hostname;
 
-    // 🟢 BƯỚC 2: Lấy user_id chính chủ từ Database
+    console.log(`📡 Fetching Dify: Tenant=${tenant_id} Domain=${domain}`);
+
+    // 🟢 BƯỚC 2: Lấy user_id thực của khách từ Database
     const leadRes = await adminDb.query(
       'SELECT user_id FROM leads WHERE conversation_id = $1',
       [conversation_id]
     );
-
-    // Nếu không tìm thấy, dùng tạm 'abc-123' (fallback)
     const realUser = leadRes.rows[0]?.user_id || 'abc-123';
 
     // 🟢 BƯỚC 3: Gọi API sang Dify
-    // Lưu ý: Dùng endpoint /messages (Dành cho Chatbot)
-    const fullUrl = `${apiUrl}/messages?conversation_id=${conversation_id}&user=${realUser}&limit=100`;
+    // Nếu ở Production, ta gọi qua IP Gateway nhưng giữ Host Header để khớp SSL/Nginx routing
+    const fetchUrl = process.env.NODE_ENV === 'production'
+      ? apiUrl.replace(domain, '172.17.0.1')
+      : apiUrl;
+
+    const fullUrl = `${fetchUrl}/messages?conversation_id=${conversation_id}&user=${realUser}&limit=100`;
 
     const res = await fetch(fullUrl, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
+        'Host': domain, // GIẢI PHÁP QUYẾT ĐỊNH: Giúp Nginx nhận diện đúng Tenant mà không bị lỗi SSL
       },
       cache: 'no-store'
     });
 
     if (!res.ok) {
-      console.error(`❌ Dify Error (${res.status}):`, await res.text());
+      const errorText = await res.text();
+      console.error(`❌ Dify Error (${res.status}):`, errorText);
       return [];
     }
 
