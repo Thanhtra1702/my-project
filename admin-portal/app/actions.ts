@@ -131,8 +131,12 @@ export async function getChatHistory(conversation_id: string, tenant_id: number)
       apiKey = (process.env.DIFY_API_KEY || '').trim();
     }
 
-    // 2. Lấy API URL
-    const originalUrl = tenantConfig?.dify_api_url || process.env.DIFY_API_URL || 'http://localhost/v1';
+    // 2. Lấy API URL và đảm bảo dùng HTTPS trên VPS để tránh Redirect mất Header
+    let originalUrl = tenantConfig?.dify_api_url || process.env.DIFY_API_URL || 'http://localhost/v1';
+
+    if (process.env.NODE_ENV === 'production' && originalUrl.startsWith('http://') && originalUrl.includes('bluebot.vn')) {
+      originalUrl = originalUrl.replace('http://', 'https://');
+    }
     apiUrl = originalUrl;
 
     if (!apiUrl || !apiKey) {
@@ -140,23 +144,20 @@ export async function getChatHistory(conversation_id: string, tenant_id: number)
       return [];
     }
 
-    // Phân tích domain để dùng cho kỹ thuật Routing
-    const urlObj = new URL(apiUrl);
-    const domain = urlObj.hostname;
+    // Kiểm tra tính hợp lệ của Key (không in ra key thật)
+    const isKeyValid = apiKey.startsWith('app-');
+    console.log(`📡 Dify History: Tenant=${tenant_id} URL=${apiUrl} ValidPrefix=${isKeyValid}`);
 
-    console.log(`📡 Fetching Dify: Tenant=${tenant_id} Domain=${domain}`);
-
-    // 🟢 BƯỚC 2: Lấy user_id thực của khách từ Database
+    // ... (Giữ nguyên logic user_id)
     const leadRes = await adminDb.query(
       'SELECT user_id FROM leads WHERE conversation_id = $1',
       [conversation_id]
     );
     const realUser = leadRes.rows[0]?.user_id || 'abc-123';
 
-    // 3. Quyết định URL thực tế để gọi
+    // 3. Gọi API
     const fullUrl = `${apiUrl}/messages?conversation_id=${conversation_id}&user=${realUser}&limit=100`;
 
-    // GIẢI PHÁP CUỐI CÙNG: Cho phép bỏ qua lỗi SSL khi gọi nội bộ trên VPS
     if (process.env.NODE_ENV === 'production') {
       process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
     }
@@ -170,7 +171,6 @@ export async function getChatHistory(conversation_id: string, tenant_id: number)
       cache: 'no-store'
     });
 
-    // Trả lại trạng thái bảo mật sau khi gọi xong
     if (process.env.NODE_ENV === 'production') {
       process.env.NODE_TLS_REJECT_UNAUTHORIZED = '1';
     }
