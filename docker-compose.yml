@@ -42,6 +42,8 @@ services:
         condition: service_healthy
     networks:
       - admin-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   # Reverse Proxy Service (Nginx)
   nginx:

@@ -124,27 +124,28 @@ export async function getChatHistory(conversation_id: string, tenant_id: number)
     let apiKey = '';
     let apiUrl = '';
 
-    // 1. Lấy API Key (Ưu tiên Database của Tenant, sau đó tới .env)
+    // 1. Lấy API Key và làm sạch (Trim) để tránh ký tự ẩn (\r, \n)
     if (tenantConfig?.dify_api_key) {
-      apiKey = decrypt(tenantConfig.dify_api_key);
+      apiKey = decrypt(tenantConfig.dify_api_key).trim();
     } else {
-      apiKey = process.env.DIFY_API_KEY || '';
+      apiKey = (process.env.DIFY_API_KEY || '').trim();
     }
 
-    // 2. Lấy API URL (Trên VPS/Production dùng host.docker.internal để tránh lỗi 401/Network Loopback)
+    // 2. Lấy API URL
     if (process.env.NODE_ENV === 'production') {
-      apiUrl = 'http://host.docker.internal/v1';
+      // Dùng IP của Docker Gateway (172.17.0.1) để gọi thẳng vào port 80 của Host 
+      // Tránh việc đi vòng qua Domain công cộng bị Nginx redirect làm mất Header Authorization
+      apiUrl = 'http://172.17.0.1/v1';
     } else {
       apiUrl = tenantConfig?.dify_api_url || process.env.DIFY_API_URL || 'http://localhost/v1';
     }
-
-    // Xóa bỏ log debug cũ, thêm log thông tin vận hành
-    console.log(`📡 Fetching Dify History: Tenant=${tenant_id} URL=${apiUrl}`);
 
     if (!apiUrl || !apiKey) {
       console.error(`❌ Thiếu cấu hình Dify cho tenant ${tenant_id}`);
       return [];
     }
+
+    console.log(`📡 Fetching Dify: Tenant=${tenant_id} Endpoint=${apiUrl}/messages`);
 
     // 🟢 BƯỚC 2: Lấy user_id chính chủ từ Database
     const leadRes = await adminDb.query(
