@@ -2,29 +2,29 @@ import nodemailer from 'nodemailer';
 
 // Kiểm tra biến môi trường
 if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.error("❌ LỖI: Chưa cấu hình SMTP_USER hoặc SMTP_PASS trong file .env");
+  console.error("❌ LỖI: Chưa cấu hình SMTP_USER hoặc SMTP_PASS trong file .env");
 }
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-    },
+  service: 'gmail',
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
 });
 
 export async function sendLeadEmail(toEmail: string, leadData: any) {
-    const { customer_name, phone_number, need } = leadData;
-    const systemEmail = process.env.SMTP_USER;
+  const { customer_name, phone_number, need } = leadData;
+  const systemEmail = process.env.SMTP_USER;
 
-    const subject = `[Thông báo Lead] Khách hàng mới: ${customer_name}`;
+  const subject = `[Thông báo Lead] Khách hàng mới: ${customer_name}`;
 
-    try {
-        const info = await transporter.sendMail({
-            from: `"Hệ thống CSKH" <${systemEmail}>`,
-            to: toEmail,
-            subject: subject,
-            html: `
+  try {
+    const info = await transporter.sendMail({
+      from: `"BlueData CRM" <${systemEmail}>`,
+      to: toEmail,
+      subject: subject,
+      html: `
         <!DOCTYPE html>
         <html>
         <head>
@@ -136,17 +136,47 @@ export async function sendLeadEmail(toEmail: string, leadData: any) {
             </div>
 
             <div class="email-footer">
-              Email thông báo tự động từ Hệ thống Quản trị Lead.
+              Email thông báo tự động từ BlueData.
             </div>
           </div>
         </body>
         </html>
       `,
-        });
-        console.log("✅ Email sent:", info.messageId);
-        return true;
-    } catch (error) {
-        console.error('❌ Lỗi gửi mail chi tiết:', error);
-        return false;
-    }
+    });
+    console.log("✅ Email sent:", info.messageId);
+    return true;
+  } catch (error) {
+    console.error('❌ Lỗi gửi mail chi tiết:', error);
+    return false;
+  }
+}
+
+export async function sendResetPasswordEmail(toEmail: string, resetLink: string) {
+  const systemEmail = process.env.SMTP_USER;
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"Hệ thống BlueData" <${systemEmail}>`,
+      to: toEmail,
+      subject: "[BlueData] Yêu cầu đặt lại mật khẩu",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px;">
+          <h2 style="color: #2563eb; text-align: center;">Đặt lại mật khẩu</h2>
+          <p>Chào bạn,</p>
+          <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Vui lòng nhấn vào nút bên dưới để thực hiện thay đổi:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetLink}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Đặt lại mật khẩu</a>
+          </div>
+          <p>Nếu bạn không gửi yêu cầu này, vui lòng bỏ qua email này. Liên kết sẽ hết hạn sau một thời gian ngắn.</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="font-size: 12px; color: #6b7280; text-align: center;">© 2024 BlueData. Tất cả quyền được bảo lưu.</p>
+        </div>
+      `,
+    });
+    console.log("✅ Reset Email sent:", info.messageId);
+    return true;
+  } catch (error) {
+    console.error('❌ Lỗi gửi mail reset mật khẩu:', error);
+    return false;
+  }
 }

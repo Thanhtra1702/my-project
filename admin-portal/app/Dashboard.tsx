@@ -155,9 +155,9 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm">A</div>
+              <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm">B</div>
               <div>
-                <h1 className="text-lg font-bold tracking-tight text-slate-800 leading-none">{companyName || 'Admin Portal'}</h1>
+                <h1 className="text-lg font-bold tracking-tight text-slate-800 leading-none">{companyName || 'BlueData'}</h1>
                 <div className="flex items-center gap-2 mt-1">
                   <p className="text-[10px] font-medium text-slate-400 tracking-wider lowercase">{email || `Tenant ID: #${tenantId}`}</p>
                 </div>

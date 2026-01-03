@@ -3,6 +3,7 @@
 import { useFormState } from 'react-dom';
 import { useFormStatus } from 'react-dom';
 import { login } from '@/app/actions';
+import Link from 'next/link';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -25,10 +26,10 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#f8f9fa] flex flex-col font-['Inter',_Arial,_sans-serif]">
       {/* HEADER */}
       <header className="bg-white h-[60px] flex items-center shadow-[0_2px_8px_0_rgba(0,0,0,0.03)] border-b border-[#e5e7eb] px-6 sm:px-12">
-        <div className="max-w-[1200px] mx-auto w-full flex items-center">
+        <div className="max-w-[1200px] mx-auto w-full flex items-center justify-between">
           <div className="flex items-center">
-            <span className="bg-[#2563eb] font-bold rounded-lg w-8 h-8 flex items-center justify-center text-lg text-white mr-2">W</span>
-            <span className="text-[#2563eb] font-bold text-xl">WebApp</span>
+            <span className="bg-[#2563eb] font-bold rounded-lg w-8 h-8 flex items-center justify-center text-lg text-white mr-2">B</span>
+            <span className="text-[#2563eb] font-bold text-xl">BlueData</span>
           </div>
         </div>
       </header>
@@ -72,11 +73,28 @@ export default function LoginPage() {
               />
             </div>
 
+            <div className="flex justify-between items-center mb-6 mt-2">
+              <label className="flex items-center text-sm text-[#374151] cursor-pointer">
+                <input type="checkbox" className="mr-2 rounded border-[#d1d5db] text-[#2563eb] focus:ring-[#2563eb]" />
+                Ghi nhớ đăng nhập
+              </label>
+              <Link href="/forgot-password" title="Quên mật khẩu?" className="text-[#2563eb] text-sm hover:underline font-medium">
+                Quên mật khẩu?
+              </Link>
+            </div>
+
             <SubmitButton />
           </form>
+
         </div>
       </main>
 
+      {/* FOOTER */}
+      <footer className="bg-[#181e29] text-[#9ca3af] py-6 px-10 flex flex-col sm:flex-row justify-between items-center text-sm gap-4 mt-auto">
+        <div className="container mx-auto flex flex-col sm:flex-row justify-center items-center w-full max-w-[1200px]">
+          <div>© 2024 BlueData. Tất cả quyền được bảo lưu.</div>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -55,9 +55,9 @@ export default async function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm">A</div>
+              <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm">B</div>
               <div>
-                <h1 className="text-lg font-bold tracking-tight text-slate-800 leading-none">Admin Portal</h1>
+                <h1 className="text-lg font-bold tracking-tight text-slate-800 leading-none">BlueData</h1>
                 <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mt-1">
                   Xin chào: <span className="text-blue-600 font-bold">{user.username}</span>
                 </p>
