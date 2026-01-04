@@ -15,10 +15,26 @@ export default function EmbedChat() {
     const [conversationId, setConversationId] = useState('');
     const [userId, setUserId] = useState('');
 
+    // Form states
+    const [showSetup, setShowSetup] = useState(true);
+    const [customerName, setCustomerName] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [note, setNote] = useState('');
+
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        // Tạo userId ngẫu nhiên nếu chưa có (lưu vào localStorage để duy trì hội thoại)
+        // Kiểm tra xem đã có thông tin user chưa
+        const savedInfo = localStorage.getItem(`bluebot_user_info_${tenantId}`);
+        if (savedInfo) {
+            const info = JSON.parse(savedInfo);
+            setCustomerName(info.name || '');
+            setPhoneNumber(info.phone || '');
+            setNote(info.note || '');
+            setShowSetup(false);
+        }
+
+        // Tạo userId ngẫu nhiên nếu chưa có
         let savedId = localStorage.getItem(`bluebot_user_${tenantId}`);
         if (!savedId) {
             savedId = 'user_' + Math.random().toString(36).substring(2, 11);
@@ -35,7 +51,21 @@ export default function EmbedChat() {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
-    }, [messages]);
+    }, [messages, showSetup]);
+
+    const handleStartChat = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!customerName.trim() || !phoneNumber.trim()) return;
+
+        // Lưu thông tin vào localStorage
+        localStorage.setItem(`bluebot_user_info_${tenantId}`, JSON.stringify({
+            name: customerName,
+            phone: phoneNumber,
+            note: note
+        }));
+
+        setShowSetup(false);
+    };
 
     const handleSend = async () => {
         if (!input.trim() || loading) return;
@@ -53,7 +83,10 @@ export default function EmbedChat() {
                     message: userMessage,
                     tenant_id: tenantId,
                     conversation_id: conversationId,
-                    user_id: userId
+                    user_id: userId,
+                    customer_name: customerName,
+                    phone_number: phoneNumber,
+                    note: note
                 })
             });
 
@@ -74,20 +107,92 @@ export default function EmbedChat() {
         }
     };
 
+    if (showSetup) {
+        return (
+            <div className="flex flex-col h-screen bg-[#1a1a1c] font-sans text-white items-center justify-center p-6">
+                <div className="w-full max-w-[400px] bg-[#242426] rounded-2xl p-6 shadow-2xl border border-white/5 space-y-6">
+                    <div className="flex items-center gap-3 border-b border-white/5 pb-4">
+                        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/20">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z" /></svg>
+                        </div>
+                        <h3 className="font-bold text-base tracking-tight text-white/90">New chat setup</h3>
+                    </div>
+
+                    <form onSubmit={handleStartChat} className="space-y-4">
+                        <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-white/40 uppercase tracking-wider ml-1">Họ và tên</label>
+                            <input
+                                required
+                                value={customerName}
+                                onChange={(e) => setCustomerName(e.target.value)}
+                                placeholder="Họ và tên"
+                                className="w-full bg-[#1a1a1c] border border-white/5 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600/50 transition-all placeholder:text-white/20"
+                            />
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-white/40 uppercase tracking-wider ml-1">Số điện thoại</label>
+                            <input
+                                required
+                                value={phoneNumber}
+                                onChange={(e) => setPhoneNumber(e.target.value)}
+                                placeholder="Số điện thoại"
+                                className="w-full bg-[#1a1a1c] border border-white/5 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600/50 transition-all placeholder:text-white/20"
+                            />
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-white/40 uppercase tracking-wider ml-1">Vấn đề cần hỗ trợ</label>
+                            <textarea
+                                value={note}
+                                onChange={(e) => setNote(e.target.value)}
+                                placeholder="Vấn đề cần hỗ trợ"
+                                rows={2}
+                                className="w-full bg-[#1a1a1c] border border-white/5 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600/50 transition-all placeholder:text-white/20 resize-none"
+                            />
+                        </div>
+
+                        <button
+                            type="submit"
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-blue-600/20 active:scale-[0.98] mt-2"
+                        >
+                            Start Chat
+                        </button>
+                    </form>
+                </div>
+                <p className="text-[10px] text-white/20 mt-6 uppercase font-bold tracking-[0.2em]">
+                    Powered by Bluebot AI
+                </p>
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col h-screen bg-white font-sans text-slate-800">
             {/* Header */}
-            <div className="bg-indigo-600 p-4 text-white flex items-center gap-3 shadow-md">
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center border border-white/30">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8V4H8" /><rect width="16" height="12" x="4" y="8" rx="2" /><path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" /></svg>
+            <div className="bg-indigo-600 p-4 text-white flex items-center justify-between shadow-md">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center border border-white/30">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8V4H8" /><rect width="16" height="12" x="4" y="8" rx="2" /><path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" /></svg>
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-sm">Trợ lý Bluebot</h3>
+                        <p className="text-[10px] text-indigo-100 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            Đang trực tuyến
+                        </p>
+                    </div>
                 </div>
-                <div>
-                    <h3 className="font-bold text-sm">Trợ lý Bluebot</h3>
-                    <p className="text-[10px] text-indigo-100 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                        Đang trực tuyến
-                    </p>
-                </div>
+                <button
+                    onClick={() => {
+                        localStorage.removeItem(`bluebot_user_info_${tenantId}`);
+                        window.location.reload();
+                    }}
+                    className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-white transition-colors"
+                    title="Đổi thông tin"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" /></svg>
+                </button>
             </div>
 
             {/* Messages */}
@@ -95,8 +200,8 @@ export default function EmbedChat() {
                 {messages.map((msg, i) => (
                     <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed shadow-sm ${msg.role === 'user'
-                                ? 'bg-indigo-600 text-white rounded-tr-none'
-                                : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none'
+                            ? 'bg-indigo-600 text-white rounded-tr-none'
+                            : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none'
                             }`}>
                             {msg.text}
                         </div>

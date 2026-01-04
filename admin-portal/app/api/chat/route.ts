@@ -4,7 +4,7 @@ import { decrypt } from '@/lib/crypto';
 
 export async function POST(req: Request) {
     try {
-        const { message, conversation_id, tenant_id, user_id } = await req.json();
+        const { message, conversation_id, tenant_id, user_id, customer_name, phone_number, note } = await req.json();
 
         if (!message || !tenant_id) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -47,7 +47,11 @@ export async function POST(req: Request) {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                inputs: {},
+                inputs: {
+                    customer_name: customer_name || '',
+                    phone_number: phone_number || '',
+                    note: note || ''
+                },
                 query: message,
                 response_mode: 'blocking',
                 user: user_id || 'guest-user',
