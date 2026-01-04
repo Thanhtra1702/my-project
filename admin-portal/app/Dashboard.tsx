@@ -165,11 +165,6 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
             </div>
 
             <div className="flex items-center gap-4 sm:gap-6">
-              <button onClick={handleRefresh} disabled={isRefreshing} className="flex items-center gap-2 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-full transition-all">
-                <RefreshIcon spin={isRefreshing} />
-                <span className="hidden sm:inline">{isRefreshing ? 'Đang tải...' : 'Làm mới'}</span>
-              </button>
-
               <div className="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
                 <div className="text-right hidden sm:block">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bot Status</p>
@@ -258,7 +253,23 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
             </div>
           </div>
         ) : (
-          <div className="space-y-5 animate-in fade-in duration-300">
+          <div className="space-y-6 animate-in fade-in duration-300">
+            {/* Header của Tab với Nút Làm mới */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">Tất cả khách hàng (Leads)</h2>
+                <p className="text-sm text-slate-500 mt-1">Theo dõi khách hàng và lịch sử hội thoại của bạn.</p>
+              </div>
+              <button
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+              >
+                <RefreshIcon spin={isRefreshing} />
+                <span>{isRefreshing ? 'Đang cập nhật...' : 'Làm mới'}</span>
+              </button>
+            </div>
+
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center">
               <div className="relative flex-1 w-full">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><SearchIcon /></div>
