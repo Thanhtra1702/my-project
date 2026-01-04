@@ -58,7 +58,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export default function Dashboard({ leads, tenantId, companyName, email, stats, chartData, isSystemLocked, initialBotStatus, tokenLimit }: DashboardProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'overview' | 'leads'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'embed'>('overview');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [loadingChat, setLoadingChat] = useState(false);
@@ -186,6 +186,7 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
           <div className="flex gap-8 mt-1">
             <TabButton active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} label="Tổng quan" />
             <TabButton active={activeTab === 'leads'} onClick={() => setActiveTab('leads')} label="Danh sách khách hàng" />
+            <TabButton active={activeTab === 'embed'} onClick={() => setActiveTab('embed')} label="Mã nhúng" />
           </div>
         </div>
       </header>
@@ -252,7 +253,7 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
               </div>
             </div>
           </div>
-        ) : (
+        ) : activeTab === 'leads' ? (
           <div className="space-y-6 animate-in fade-in duration-300">
             {/* Header của Tab với Nút Làm mới */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -345,6 +346,63 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
                 </div>
               </div>
             )}
+          </div>
+        ) : (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">Cấu hình mã nhúng</h2>
+                <p className="text-sm text-slate-500 mt-1">Sử dụng đoạn mã sau để tích hợp Chatbot vào website của bạn.</p>
+              </div>
+            </div>
+
+            <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm ring-1 ring-slate-900/5">
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                    <span className="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs">1</span>
+                    Dán mã này vào cuối thẻ <code>&lt;body&gt;</code> website của bạn:
+                  </h4>
+                  <div className="relative group">
+                    <pre className="bg-slate-900 text-slate-100 p-5 rounded-xl font-mono text-xs overflow-x-auto leading-relaxed shadow-inner">
+                      {`<script>
+  window.bluebotConfig = {
+    tenantId: '${tenantId}',
+    baseUrl: 'https://bluebot.vn'
+  };
+</script>
+<script src="https://bluebot.vn/embed.js" defer></script>`}
+                    </pre>
+                    <button
+                      onClick={() => {
+                        const code = `<script>\n  window.bluebotConfig = {\n    tenantId: '${tenantId}',\n    baseUrl: 'https://bluebot.vn'\n  };\n</script>\n<script src="https://bluebot.vn/embed.js" defer></script>`;
+                        navigator.clipboard.writeText(code);
+                        alert('Đã sao chép mã nhúng!');
+                      }}
+                      className="absolute top-3 right-3 bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all border border-white/10 backdrop-blur-sm"
+                    >
+                      Sao chép
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-5 bg-amber-50 border border-amber-100 rounded-xl">
+                  <div className="flex gap-3">
+                    <div className="mt-0.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    </div>
+                    <div>
+                      <h5 className="text-sm font-bold text-amber-900">Lưu ý quan trọng:</h5>
+                      <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+                        - Đảm bảo bạn đã cấu hình <b>Dify API Key</b> và <b>Dify App ID</b> trong phần Cấu hình để chatbot có thể hoạt động.<br />
+                        - Chatbot này sẽ hiển thị dưới dạng một nút bong bóng nổi ở góc dưới bên phải màn hình website của bạn.<br />
+                        - Mọi hội thoại sẽ được lưu lại trong danh sách khách hàng của bạn.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </main>
