@@ -98,7 +98,7 @@ export default function EmbedChat() {
                     localStorage.setItem(`bluebot_conv_${tenantId}`, data.conversation_id);
                 }
             } else {
-                setMessages(prev => [...prev, { role: 'bot', text: 'Xin lỗi, tôi gặp chút trục trặc. Vui lòng thử lại sau.' }]);
+                setMessages(prev => [...prev, { role: 'bot', text: `Xin lỗi, tôi gặp chút trục trặc: ${data.error || 'Vui lòng thử lại sau.'}` }]);
             }
         } catch (error) {
             setMessages(prev => [...prev, { role: 'bot', text: 'Lỗi kết nối máy chủ.' }]);

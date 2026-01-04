@@ -21,7 +21,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Tenant is inactive or bot is disabled' }, { status: 403 });
         }
 
-        // 2. Kiểm tra giới hạn token (tổng quát)
+        // 2. Kiểm tra giới hạn token
         const usageRes = await adminDb.query(
             'SELECT SUM(total_tokens) as total FROM token_logs WHERE tenant_id = $1',
             [tenant_id]
@@ -35,10 +35,19 @@ export async function POST(req: Request) {
         const apiKey = decrypt(tenant.dify_api_key).trim();
         let apiUrl = tenant.dify_api_url || process.env.DIFY_API_URL || 'https://api.dify.ai/v1';
 
-        // Đảm bảo URL kết thúc đúng
         if (!apiUrl.endsWith('/v1')) {
             apiUrl = apiUrl.replace(/\/$/, '') + (apiUrl.includes('/v1') ? '' : '/v1');
         }
+
+        // Mapping inputs với nhiều variant để tăng khả năng khớp với Dify
+        const inputs = {
+            customer_name: customer_name || '',
+            name: customer_name || '',
+            phone_number: phone_number || '',
+            phone: phone_number || '',
+            note: note || '',
+            issue: note || ''
+        };
 
         const difyResponse = await fetch(`${apiUrl}/chat-messages`, {
             method: 'POST',
@@ -47,11 +56,7 @@ export async function POST(req: Request) {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                inputs: {
-                    customer_name: customer_name || '',
-                    phone_number: phone_number || '',
-                    note: note || ''
-                },
+                inputs: inputs,
                 query: message,
                 response_mode: 'blocking',
                 user: user_id || 'guest-user',
@@ -60,9 +65,15 @@ export async function POST(req: Request) {
         });
 
         if (!difyResponse.ok) {
-            const errorData = await difyResponse.text();
-            console.error('Dify API Error:', errorData);
-            return NextResponse.json({ error: 'Failed to connect to AI engine' }, { status: difyResponse.status });
+            const errorText = await difyResponse.text();
+            let errorMessage = 'Failed to connect to AI engine';
+            try {
+                const errorJson = JSON.parse(errorText);
+                errorMessage = errorJson.message || errorJson.code || errorMessage;
+            } catch (e) { }
+
+            console.error('Dify API Error:', errorText);
+            return NextResponse.json({ error: errorMessage }, { status: difyResponse.status });
         }
 
         const data = await difyResponse.json();
