@@ -8,7 +8,7 @@ export default function EmbedChat() {
     const tenantId = params.tenantId;
 
     const [messages, setMessages] = useState<{ role: 'user' | 'bot' | 'system'; text: string; isForm?: boolean }[]>([
-        { role: 'bot', text: 'Chào mừng bạn đến với Bluebot AI! Đây là trợ lý ảo hỗ trợ tư vấn, chốt đơn và chăm khách tự động.' },
+        { role: 'bot', text: 'Chào mừng bạn! Đây là trợ lý ảo hỗ trợ tư vấn, chốt đơn và chăm khách tự động.' },
     ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -45,7 +45,7 @@ export default function EmbedChat() {
             // Add form request message
             setTimeout(() => {
                 setMessages(prev => [...prev,
-                { role: 'bot', text: 'Để minh tư vấn chính xác hơn, bạn vui lòng để lại Họ tên & Số điện thoại nhé:' },
+                { role: 'bot', text: 'Để minh tư vấn chính xác hơn, bạn vui lòng để lại thông tin nhé:' },
                 { role: 'bot', text: '', isForm: true }
                 ]);
             }, 600);
@@ -74,7 +74,7 @@ export default function EmbedChat() {
         setIsFormSubmitted(true);
         setMessages(prev => [
             ...prev.filter(m => !m.isForm),
-            { role: 'user', text: `Tôi là ${customerName}, SĐT: ${phoneNumber}. ${note ? `Cần hỗ trợ: ${note}` : ''}` },
+            { role: 'user', text: `Tôi là ${customerName}, SĐT: ${phoneNumber}${note ? `. Cần hỗ trợ: ${note}` : ''}` },
             { role: 'bot', text: 'Cảm ơn bạn! Tôi đã ghi nhận thông tin. Bạn có thể bắt đầu chat ngay bây giờ.' }
         ]);
     };
@@ -176,7 +176,7 @@ export default function EmbedChat() {
                                                     value={customerName}
                                                     onChange={(e) => setCustomerName(e.target.value)}
                                                     placeholder="Nguyễn Văn A"
-                                                    className="w-full mt-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                                    className="w-full mt-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                                                 />
                                             </div>
                                             <div>
@@ -187,7 +187,17 @@ export default function EmbedChat() {
                                                     value={phoneNumber}
                                                     onChange={(e) => setPhoneNumber(e.target.value)}
                                                     placeholder="0912 345 678"
-                                                    className="w-full mt-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                                    className="w-full mt-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Vấn đề cần hỗ trợ</label>
+                                                <textarea
+                                                    value={note}
+                                                    onChange={(e) => setNote(e.target.value)}
+                                                    placeholder="VD: Tư vấn giá dịch vụ..."
+                                                    rows={2}
+                                                    className="w-full mt-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
                                                 />
                                             </div>
                                             <button
@@ -200,8 +210,8 @@ export default function EmbedChat() {
                                     </div>
                                 ) : (
                                     <div className={`p-4 rounded-2xl text-[13.5px] leading-relaxed shadow-sm ${msg.role === 'user'
-                                            ? 'bg-blue-600 text-white rounded-tr-none'
-                                            : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none'
+                                        ? 'bg-blue-600 text-white rounded-tr-none'
+                                        : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none'
                                         }`}>
                                         {msg.text}
                                     </div>
@@ -244,10 +254,6 @@ export default function EmbedChat() {
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                     </button>
-                </div>
-                <div className="flex justify-center items-center gap-1.5 mt-3">
-                    <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Powered by</span>
-                    <span className="text-[10px] font-black text-blue-600/40 italic">BLUEBOT AI</span>
                 </div>
             </div>
         </div>
