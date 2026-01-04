@@ -46,7 +46,8 @@ export async function POST(req: Request) {
             phone_number: phone_number || '',
             phone: phone_number || '',
             note: note || '',
-            issue: note || ''
+            issue: note || '',
+            need: note || ''
         };
 
         const difyResponse = await fetch(`${apiUrl}/chat-messages`, {
