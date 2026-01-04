@@ -15,6 +15,7 @@ export default function EmbedChat() {
     const [conversationId, setConversationId] = useState('');
     const [userId, setUserId] = useState('');
     const [isFormSubmitted, setIsFormSubmitted] = useState(false);
+    const [isFormLoading, setIsFormLoading] = useState(false);
 
     // Form values
     const [customerName, setCustomerName] = useState('');
@@ -61,9 +62,17 @@ export default function EmbedChat() {
         }
     }, [messages]);
 
-    const handleFormSubmit = (e: React.FormEvent) => {
+    const handleFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!customerName.trim() || !phoneNumber.trim()) return;
+        if (!customerName.trim() || phoneNumber.trim().length < 9) {
+            // Có thể thêm cảnh báo ở đây nếu cần
+            return;
+        }
+
+        setIsFormLoading(true);
+
+        // Giả lập độ trễ nhẹ để trải nghiệm mượt hơn
+        await new Promise(resolve => setTimeout(resolve, 800));
 
         localStorage.setItem(`bluebot_user_info_${tenantId}`, JSON.stringify({
             name: customerName,
@@ -72,6 +81,7 @@ export default function EmbedChat() {
         }));
 
         setIsFormSubmitted(true);
+        setIsFormLoading(false);
         setMessages(prev => [
             ...prev.filter(m => !m.isForm),
             { role: 'user', text: `Tôi là ${customerName}, SĐT: ${phoneNumber}${note ? `. Cần hỗ trợ: ${note}` : ''}` },
@@ -125,6 +135,12 @@ export default function EmbedChat() {
         window.location.reload();
     };
 
+    const preventEnterSubmit = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+        }
+    };
+
     return (
         <div className="flex flex-col h-screen bg-[#f8fafc] font-sans text-slate-900 overflow-hidden">
             {/* Header - Premium Gradient */}
@@ -175,6 +191,7 @@ export default function EmbedChat() {
                                                     required
                                                     value={customerName}
                                                     onChange={(e) => setCustomerName(e.target.value)}
+                                                    onKeyDown={preventEnterSubmit}
                                                     placeholder="Nguyễn Văn A"
                                                     className="w-full mt-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                                                 />
@@ -186,6 +203,7 @@ export default function EmbedChat() {
                                                     type="tel"
                                                     value={phoneNumber}
                                                     onChange={(e) => setPhoneNumber(e.target.value)}
+                                                    onKeyDown={preventEnterSubmit}
                                                     placeholder="0912 345 678"
                                                     className="w-full mt-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                                                 />
@@ -202,9 +220,15 @@ export default function EmbedChat() {
                                             </div>
                                             <button
                                                 type="submit"
-                                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/20 active:scale-[0.98] transition-all text-sm"
+                                                disabled={isFormLoading}
+                                                className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/20 active:scale-[0.98] transition-all text-sm flex items-center justify-center gap-2 ${isFormLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
                                             >
-                                                Gửi thông tin
+                                                {isFormLoading ? (
+                                                    <>
+                                                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                                        Đang ghi nhận...
+                                                    </>
+                                                ) : 'Gửi thông tin'}
                                             </button>
                                         </form>
                                     </div>
