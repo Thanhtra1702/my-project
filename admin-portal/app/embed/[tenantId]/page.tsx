@@ -8,7 +8,7 @@ export default function EmbedChat() {
     const tenantId = params.tenantId;
 
     const [messages, setMessages] = useState<{ role: 'user' | 'bot' | 'system'; text: string; isForm?: boolean }[]>([
-        { role: 'bot', text: 'Chào mừng bạn! Đây là trợ lý ảo hỗ trợ tư vấn, chốt đơn và chăm khách tự động.' },
+        { role: 'bot', text: 'Chào mừng bạn! Đây là trợ lý ảo hỗ trợ tư vấn và giải đáp thắc mắc tự động.' },
     ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
