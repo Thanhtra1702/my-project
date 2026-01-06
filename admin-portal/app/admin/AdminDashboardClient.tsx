@@ -109,8 +109,8 @@ export default function AdminDashboardClient({ tenants, leads, stats }: { tenant
             </div>
 
             <div className="flex overflow-x-auto scrollbar-hide gap-6 border-b border-slate-200">
-                <button onClick={() => handleTabChange('tenants')} className={`pb-3 text-sm font-bold transition-all border-b-2 whitespace-nowrap shrink-0 ${activeTab === 'tenants' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Danh sách Tenancy</button>
-                <button onClick={() => handleTabChange('leads')} className={`pb-3 text-sm font-bold transition-all border-b-2 whitespace-nowrap shrink-0 ${activeTab === 'leads' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Danh sách Khách hàng</button>
+                <button onClick={() => handleTabChange('tenants')} className={`pb-3 text-[11px] font-bold uppercase tracking-widest transition-all border-b-2 whitespace-nowrap shrink-0 ${activeTab === 'tenants' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Danh sách Tenancy</button>
+                <button onClick={() => handleTabChange('leads')} className={`pb-3 text-[11px] font-bold uppercase tracking-widest transition-all border-b-2 whitespace-nowrap shrink-0 ${activeTab === 'leads' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Danh sách Khách hàng</button>
             </div>
 
             <div className="space-y-5">
@@ -174,7 +174,7 @@ export default function AdminDashboardClient({ tenants, leads, stats }: { tenant
                     </div>
 
                     <div className="h-6 w-px bg-slate-200 hidden lg:block mx-1"></div>
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap text-center lg:text-left">Kết quả: <span className="text-blue-600">{displayedData.length}</span></div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap text-center lg:text-left">Kết quả: <span className="text-blue-600 font-black">{displayedData.length}</span></div>
                 </div>
 
                 {/* Desktop Table - Hidden on Mobile */}
@@ -393,28 +393,52 @@ export default function AdminDashboardClient({ tenants, leads, stats }: { tenant
             {showModal && <TenantModal tenant={selectedTenant} onClose={() => setShowModal(false)} />}
 
             {selectedLead && (
-                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl w-full max-w-2xl h-[80vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden ring-1 ring-black/5">
-                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white z-10">
-                            <div>
-                                <h3 className="font-bold text-lg text-slate-800">{selectedLead.customer_name}</h3>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                    <p className="text-xs text-slate-500 font-mono">{selectedLead.phone_number}</p>
-                                    <span className="text-slate-300">•</span>
-                                    <p className="text-xs font-bold text-blue-600">Tenant: {selectedLead.tenant_name}</p>
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+                    <div className="bg-white rounded-3xl w-full max-w-2xl h-[85vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-300 overflow-hidden ring-1 ring-black/5">
+                        <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white z-10 shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-sm"><UserIcon /></div>
+                                <div>
+                                    <h3 className="font-black text-slate-800 leading-tight">{selectedLead.customer_name}</h3>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{selectedLead.phone_number}</p>
+                                        <span className="text-slate-300 text-[10px]">•</span>
+                                        <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Tenant: {selectedLead.tenant_name}</p>
+                                    </div>
                                 </div>
                             </div>
-                            <button onClick={() => setSelectedLead(null)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition"><CloseIcon /></button>
+                            <button onClick={() => setSelectedLead(null)} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition"><CloseIcon /></button>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-6 bg-slate-50 space-y-6">
+                        <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50 space-y-6 scrollbar-hide">
                             {loadingChat ? (
-                                <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-blue-600"></div></div>
+                                <div className="flex flex-col items-center justify-center py-20 gap-3">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-blue-600"></div>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Đang tải tin nhắn...</span>
+                                </div>
                             ) : messages.length === 0 ? (
-                                <div className="text-center py-20 text-slate-400 text-sm">Chưa có lịch sử tin nhắn.</div>
+                                <div className="text-center py-20">
+                                    <div className="w-16 h-16 bg-white rounded-full border border-slate-100 flex items-center justify-center mx-auto mb-4 text-slate-300 shadow-sm">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                    </div>
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest text-center">Chưa có lịch sử tin nhắn</p>
+                                </div>
                             ) : messages.map((msg, i) => (
-                                <div key={i} className="space-y-2">
-                                    {msg.query && <div className="flex justify-end"><div className="bg-blue-600 text-white px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm max-w-[85%] shadow-sm leading-relaxed">{msg.query}</div></div>}
-                                    {msg.answer && <div className="flex justify-start gap-3"><div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-bold text-blue-600 shrink-0 shadow-sm">AI</div><div className="bg-white border border-slate-200 text-slate-800 px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm max-w-[85%] shadow-sm leading-relaxed">{msg.answer}</div></div>}
+                                <div key={i} className="space-y-2 group">
+                                    {msg.query && (
+                                        <div className="flex justify-end animate-in slide-in-from-right-2 duration-300">
+                                            <div className="bg-blue-600 text-white px-5 py-3 rounded-2xl rounded-tr-sm text-sm font-medium max-w-[85%] shadow-lg shadow-blue-600/10 leading-relaxed">
+                                                {msg.query}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {msg.answer && (
+                                        <div className="flex justify-start gap-3 animate-in slide-in-from-left-2 duration-300">
+                                            <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-[10px] font-black text-blue-600 shrink-0 shadow-sm mt-1">AI</div>
+                                            <div className="bg-white border border-slate-200 text-slate-800 px-5 py-3 rounded-2xl rounded-tl-sm text-sm font-medium max-w-[85%] shadow-sm leading-relaxed border-l-4 border-l-blue-500 whitespace-pre-wrap">
+                                                {msg.answer}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -427,10 +451,12 @@ export default function AdminDashboardClient({ tenants, leads, stats }: { tenant
 
 function StatCard({ label, value, unit, highlighted = false }: any) {
     return (
-        <div className={`p-6 rounded-2xl border shadow-sm ring-1 ring-slate-900/5 transition-all hover:shadow-md ${highlighted ? 'bg-gradient-to-br from-blue-600 to-indigo-700 border-transparent text-white' : 'bg-white border-slate-200'}`}>
-            <p className={`text-[11px] font-bold uppercase tracking-wider mb-1 ${highlighted ? 'text-blue-100' : 'text-slate-400'}`}>{label}</p>
-            <div className="flex items-baseline gap-1"><span className={`text-3xl font-black ${highlighted ? 'text-white' : 'text-slate-900'}`}>{value}</span></div>
-            <p className={`text-[10px] font-bold mt-1 uppercase ${highlighted ? 'text-blue-200' : 'text-slate-400'}`}>{unit}</p>
+        <div className={`p-6 rounded-3xl border shadow-sm shadow-slate-200/50 ring-1 ring-slate-900/5 transition-all hover:shadow-xl hover:scale-[1.02] duration-300 ${highlighted ? 'bg-gradient-to-br from-blue-600 to-indigo-700 border-transparent text-white' : 'bg-white border-slate-200'}`}>
+            <p className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${highlighted ? 'text-blue-100' : 'text-slate-400'}`}>{label}</p>
+            <div className="flex items-baseline gap-1.5">
+                <span className={`text-3xl font-black tracking-tighter ${highlighted ? 'text-white' : 'text-slate-900'}`}>{value}</span>
+                <span className={`text-[9px] font-bold uppercase tracking-widest mb-1 ${highlighted ? 'text-blue-200' : 'text-slate-400'}`}>{unit}</span>
+            </div>
         </div>
     );
 }

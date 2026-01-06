@@ -165,8 +165,8 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
             <div className="flex items-center gap-3 sm:gap-6">
               <div className="flex items-center gap-3 bg-slate-50 p-1.5 pl-3 rounded-2xl border border-slate-100 shadow-inner">
                 <div className="text-right hidden sm:block">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Bot Status</p>
-                  <p className={`text-[11px] font-black ${botEnabled && !isSystemLocked ? 'text-emerald-600' : 'text-slate-400'}`}>{isSystemLocked ? 'LOCKED' : (botEnabled ? 'ENABLED' : 'DISABLED')}</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Bot Status</p>
+                  <p className={`text-[11px] font-bold ${botEnabled && !isSystemLocked ? 'text-emerald-600' : 'text-slate-400'}`}>{isSystemLocked ? 'LOCKED' : (botEnabled ? 'ENABLED' : 'DISABLED')}</p>
                 </div>
                 <button
                   onClick={handleToggleBot}
@@ -202,7 +202,7 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
 
               <div className={`p-6 rounded-3xl border shadow-xl ring-1 ring-slate-900/5 bg-gradient-to-br from-blue-600 to-indigo-700 border-transparent text-white transition-all hover:shadow-2xl hover:scale-[1.02]`}>
                 <div className="flex justify-between items-start mb-3">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-blue-100/70">Tổng tích lũy</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-blue-100/70">Tổng tích lũy</p>
                   <div className="bg-white/10 p-1.5 rounded-lg border border-white/10"><BarChartIcon /></div>
                 </div>
                 <div className="flex items-baseline gap-1.5">
@@ -212,7 +212,7 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
                 <div className="w-full h-2 bg-black/20 rounded-full mt-5 overflow-hidden shadow-inner">
                   <div className={`h-full rounded-full transition-all duration-1000 ease-out ${usagePercent > 90 ? 'bg-rose-400' : 'bg-white'}`} style={{ width: `${usagePercent}%` }}></div>
                 </div>
-                <p className="text-[10px] font-black mt-3 uppercase tracking-tighter text-blue-100">Hiệu suất dùng: {usagePercent.toFixed(1)}%</p>
+                <p className="text-[10px] font-bold mt-3 uppercase tracking-tighter text-blue-100">Hiệu suất dùng: {usagePercent.toFixed(1)}%</p>
               </div>
 
               <StatCard label="Tổng khách hàng" value={leads.length} unit="Khách hàng" />
@@ -220,7 +220,7 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm shadow-slate-200/50">
-                <div className="mb-6 flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <div className="mb-6 flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-slate-400">
                   <h3>Khách hàng mới (Leads)</h3>
                   <span>7 Ngày gần nhất</span>
                 </div>
@@ -237,7 +237,7 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
                 </div>
               </div>
               <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm shadow-slate-200/50">
-                <div className="mb-6 flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <div className="mb-6 flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-slate-400">
                   <h3>Sử dụng Token</h3>
                   <span>Lưu lượng theo ngày</span>
                 </div>
@@ -294,7 +294,7 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
                 </div>
               </div>
               <div className="h-6 w-px bg-slate-200 hidden md:block mx-1"></div>
-              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap text-center lg:text-left">Kết quả: <span className="text-blue-600">{filteredLeads.length}</span></div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap text-center lg:text-left">Kết quả: <span className="text-blue-600 font-black">{filteredLeads.length}</span></div>
             </div>
 
             {/* Desktop View Table */}
@@ -398,44 +398,47 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
         )}
       </main>
 
-      {/* --- CHAT MODAL --- */}
       {selectedLead && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-300">
-          <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-2xl h-[92vh] sm:h-[85vh] flex flex-col shadow-2xl animate-in slide-in-from-bottom-5 sm:zoom-in-95 duration-300 overflow-hidden">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-2xl h-[92vh] sm:h-[85vh] flex flex-col shadow-2xl animate-in slide-in-from-bottom-5 sm:zoom-in-95 duration-300 overflow-hidden ring-1 ring-black/5">
             <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100"><UserIcon /></div>
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-sm"><UserIcon /></div>
                 <div>
                   <h3 className="font-black text-slate-800 leading-tight">{selectedLead.customer_name}</h3>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{selectedLead.phone_number}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{selectedLead.phone_number}</p>
+                    <span className="text-slate-300 text-[10px]">•</span>
+                    <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Khách hàng #{selectedLead.id}</p>
+                  </div>
                 </div>
               </div>
               <button onClick={() => setSelectedLead(null)} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-900 transition-colors"><CloseIcon /></button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-50 space-y-6 scrollbar-hide pb-24 sm:pb-8">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-50/50 space-y-6 scrollbar-hide pb-24 sm:pb-8">
               {loadingChat ? (
                 <div className="flex flex-col items-center justify-center py-24 gap-3">
                   <div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-blue-600"></div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Đang tải tin nhắn...</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Đang tải tin nhắn...</span>
                 </div>
               ) : messages.length === 0 ? (
                 <div className="text-center py-24">
-                  <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300"><MessageIcon /></div>
+                  <div className="w-16 h-16 bg-white rounded-full border border-slate-100 flex items-center justify-center mx-auto mb-4 text-slate-300 shadow-sm"><MessageIcon /></div>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest text-center">Chưa có lịch sử hội thoại</p>
                 </div>
               ) : messages.map((msg, i) => (
                 <div key={i} className="space-y-2 group">
                   {msg.query && (
-                    <div className="flex justify-end pr-2 animate-in slide-in-from-right-2 duration-300">
-                      <div className="bg-blue-600 text-white px-5 py-3 rounded-2xl rounded-tr-sm text-[13px] font-medium max-w-[85%] shadow-lg shadow-blue-600/10 leading-relaxed font-sans">
+                    <div className="flex justify-end animate-in slide-in-from-right-2 duration-300">
+                      <div className="bg-blue-600 text-white px-5 py-3 rounded-2xl rounded-tr-sm text-sm font-medium max-w-[85%] shadow-lg shadow-blue-600/10 leading-relaxed">
                         {msg.query}
                       </div>
                     </div>
                   )}
                   {msg.answer && (
-                    <div className="flex justify-start gap-2.5 animate-in slide-in-from-left-2 duration-300">
+                    <div className="flex justify-start gap-3 animate-in slide-in-from-left-2 duration-300">
                       <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-[10px] font-black text-blue-600 shrink-0 shadow-sm mt-1">AI</div>
-                      <div className="bg-white border border-slate-100 text-slate-800 px-5 py-3 rounded-2xl rounded-tl-sm text-[13px] font-medium max-w-[85%] shadow-sm leading-relaxed border-l-4 border-l-blue-500/30 whitespace-pre-wrap">
+                      <div className="bg-white border border-slate-200 text-slate-800 px-5 py-3 rounded-2xl rounded-tl-sm text-sm font-medium max-w-[85%] shadow-sm leading-relaxed border-l-4 border-l-blue-500 whitespace-pre-wrap">
                         {msg.answer}
                       </div>
                     </div>
@@ -444,7 +447,7 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
               ))}
             </div>
             <div className="bg-white px-6 py-4 border-t border-slate-50 sm:hidden">
-              <button onClick={() => setSelectedLead(null)} className="w-full bg-slate-100 text-slate-500 font-black py-4 rounded-2xl text-[11px] uppercase tracking-widest">Đóng lịch sử</button>
+              <button onClick={() => setSelectedLead(null)} className="w-full bg-slate-100 text-slate-500 font-bold py-4 rounded-2xl text-[11px] uppercase tracking-widest">Đóng lịch sử</button>
             </div>
           </div>
         </div>
@@ -465,7 +468,7 @@ function TabButton({ active, onClick, label }: any) {
   return (
     <button
       onClick={onClick}
-      className={`pb-4 pt-4 text-[11px] font-black uppercase tracking-widest transition-all border-b-2 whitespace-nowrap shrink-0 ${active ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-900 hover:border-slate-200'}`}
+      className={`pb-4 pt-4 text-[11px] font-bold uppercase tracking-widest transition-all border-b-2 whitespace-nowrap shrink-0 ${active ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-900 hover:border-slate-200'}`}
     >
       {label}
     </button>
@@ -475,12 +478,12 @@ function StatCard({ label, value, unit, highlighted = false, icon }: any) {
   return (
     <div className={`p-6 rounded-3xl border shadow-sm shadow-slate-200/50 ring-1 ring-slate-900/5 transition-all hover:shadow-xl group hover:scale-[1.03] duration-300 ${highlighted ? 'bg-gradient-to-br from-blue-600 to-indigo-700 border-transparent text-white' : 'bg-white border-slate-200'}`}>
       <div className="flex justify-between items-start mb-3">
-        <p className={`text-[10px] font-black uppercase tracking-widest ${highlighted ? 'text-blue-100' : 'text-slate-400'}`}>{label}</p>
+        <p className={`text-[10px] font-bold uppercase tracking-widest ${highlighted ? 'text-blue-100' : 'text-slate-400'}`}>{label}</p>
         {icon && <div className={`${highlighted ? 'text-blue-200' : 'text-slate-300'} group-hover:scale-110 transition-transform`}>{icon}</div>}
       </div>
       <div className="flex items-baseline gap-1.5 align-bottom">
         <span className={`text-3xl font-black ${highlighted ? 'text-white' : 'text-slate-900'} tracking-tighter`}>{value}</span>
-        <span className={`text-[9px] font-black uppercase tracking-widest ${highlighted ? 'text-blue-200' : 'text-slate-400'} mb-1`}>{unit}</span>
+        <span className={`text-[9px] font-bold uppercase tracking-widest ${highlighted ? 'text-blue-200' : 'text-slate-400'} mb-1`}>{unit}</span>
       </div>
     </div>
   );
