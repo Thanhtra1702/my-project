@@ -58,7 +58,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export default function Dashboard({ leads, tenantId, companyName, email, stats, chartData, isSystemLocked, initialBotStatus, tokenLimit }: DashboardProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'embed'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'leads'>('overview');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [loadingChat, setLoadingChat] = useState(false);
@@ -188,7 +188,6 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
           <div className="flex overflow-x-auto scrollbar-hide gap-6 sm:gap-8 mt-1 border-t border-slate-50/50">
             <TabButton active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} label="Tổng quan" />
             <TabButton active={activeTab === 'leads'} onClick={() => setActiveTab('leads')} label="Danh sách khách hàng" />
-            <TabButton active={activeTab === 'embed'} onClick={() => setActiveTab('embed')} label="Mã nhúng" />
           </div>
         </div>
       </header>
@@ -262,7 +261,7 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
               </div>
             </div>
           </div>
-        ) : activeTab === 'leads' ? (
+        ) : (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5">
               <div>
@@ -395,63 +394,6 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
                 </div>
               </div>
             )}
-          </div>
-        ) : (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5">
-              <div>
-                <h2 className="text-xl font-black text-slate-800 tracking-tight">Cấu hình mã nhúng</h2>
-                <p className="text-sm text-slate-500 font-medium">Sử dụng mã dưới đây để mang Trợ lý AI lên website của bạn.</p>
-              </div>
-            </div>
-
-            <div className="bg-white p-6 sm:p-10 rounded-3xl border border-slate-200 shadow-sm shadow-slate-200/50">
-              <div className="space-y-8">
-                <div>
-                  <h4 className="text-xs font-black text-slate-800 mb-4 flex items-center gap-3 uppercase tracking-widest">
-                    <span className="flex items-center justify-center w-7 h-7 bg-blue-600 text-white rounded-lg text-xs shadow-lg shadow-blue-600/30">1</span>
-                    Dán mã trước thẻ đóng <code>&lt;/body&gt;</code>:
-                  </h4>
-                  <div className="relative group overflow-hidden rounded-2xl border border-slate-800">
-                    <pre className="bg-slate-900 text-slate-300 p-6 font-mono text-[11px] sm:text-xs overflow-x-auto leading-relaxed scrollbar-hide">
-                      {`<script>
-  window.bluebotConfig = {
-    tenantId: '${tenantId}',
-    baseUrl: 'https://bluebot.vn'
-  };
-</script>
-<script src="https://bluebot.vn/embed.js" defer></script>`}
-                    </pre>
-                    <button
-                      onClick={() => {
-                        const code = `<script>\n  window.bluebotConfig = {\n    tenantId: '${tenantId}',\n    baseUrl: 'https://bluebot.vn'\n  };\n</script>\n<script src="https://bluebot.vn/embed.js" defer></script>`;
-                        navigator.clipboard.writeText(code);
-                        alert('Đã sao chép mã nhúng!');
-                      }}
-                      className="absolute top-4 right-4 bg-white hover:bg-blue-600 text-slate-900 hover:text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl active:scale-95"
-                    >
-                      Bấm để sao chép
-                    </button>
-                  </div>
-                </div>
-
-                <div className="p-6 bg-blue-50/50 border border-blue-100 rounded-2xl">
-                  <div className="flex gap-4">
-                    <div className="shrink-0">
-                      <div className="w-10 h-10 bg-white rounded-xl border border-blue-200 flex items-center justify-center text-blue-600 shadow-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                      </div>
-                    </div>
-                    <div>
-                      <h5 className="text-[11px] font-black text-blue-900 uppercase tracking-widest mb-1.5">Mẹo cài đặt:</h5>
-                      <p className="text-[12px] text-blue-700/80 font-medium leading-relaxed">
-                        Bạn có thể gửi mã nhúng này cho bộ phận kỹ thuật Web hoặc tự dán qua Google Tag Manager. Chatbot sẽ tự động hiển thị dưới dạng icon bong bóng bay ở góc phải màn hình sau khi cài đặt thành công.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         )}
       </main>
