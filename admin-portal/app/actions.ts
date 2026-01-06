@@ -134,8 +134,15 @@ export async function getChatHistory(conversation_id: string, tenant_id: number)
     // 2. Lấy API URL và đảm bảo dùng HTTPS trên VPS để tránh Redirect mất Header
     let originalUrl = tenantConfig?.dify_api_url || process.env.DIFY_API_URL || 'http://localhost/v1';
 
-    if (process.env.NODE_ENV === 'production' && originalUrl.startsWith('http://') && originalUrl.includes('bluebot.vn')) {
-      originalUrl = originalUrl.replace('http://', 'https://');
+    if (process.env.NODE_ENV === 'production' && originalUrl.includes('bluebot.vn')) {
+      // Đảm bảo dùng HTTPS
+      if (originalUrl.startsWith('http://')) {
+        originalUrl = originalUrl.replace('http://', 'https://');
+      }
+      // Tự động chuyển từ domain cũ sang domain mới nếu cần
+      if (originalUrl.includes('demo.bluebot.vn')) {
+        originalUrl = originalUrl.replace('demo.bluebot.vn', 'admin.bluebot.vn');
+      }
     }
     apiUrl = originalUrl;
 

@@ -27,10 +27,14 @@ export async function saveTenant(formData: FormData) {
   const password = formData.get('password') as string;
   const role = formData.get('role') as string;
 
-  // Lấy API Key thô từ form
   const rawApiKey = formData.get('apiKey') as string;
   const rawDifyApiKey = formData.get('difyApiKey') as string;
-  const difyApiUrl = formData.get('difyApiUrl') as string;
+  let difyApiUrl = formData.get('difyApiUrl') as string;
+
+  // Tự động chuẩn hóa domain nếu là bluebot.vn
+  if (difyApiUrl && difyApiUrl.includes('demo.bluebot.vn')) {
+    difyApiUrl = difyApiUrl.replace('demo.bluebot.vn', 'admin.bluebot.vn');
+  }
 
   // LOGIC MỚI: Nếu người dùng có nhập Key -> Mã hóa ngay lập tức
   let finalEncryptedKey = '';
