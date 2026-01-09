@@ -129,6 +129,18 @@ export default function TenantModal({ tenant, onClose }: { tenant: any, onClose:
                   </div>
                 )}
 
+                {/* OpenAI API KEY */}
+                <div>
+                  <label className={labelClass}>OpenAI API Key (Tùy chọn)</label>
+                  <input
+                    name="apiKey"
+                    type="password"
+                    placeholder={tenant ? "******** (Đã bảo mật)" : "sk-..."}
+                    className={`${inputClass} font-mono text-xs`}
+                    autoComplete="off"
+                  />
+                </div>
+
                 {/* Dify API KEY */}
                 <div>
                   <label className={labelClass}>Dify API Key</label>
