@@ -215,6 +215,7 @@ export default function AdminDashboardClient({ tenants, leads, stats }: { tenant
                             <>
                                 <thead className="bg-slate-50/80 border-b border-slate-100">
                                     <tr>
+                                        <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">ID</th>
                                         <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Khách hàng</th>
                                         <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Tài khoản</th>
                                         <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Tiến độ Token</th>
@@ -228,6 +229,9 @@ export default function AdminDashboardClient({ tenants, leads, stats }: { tenant
                                         <tr><td colSpan={6} className="p-12 text-center text-slate-400 italic">Không tìm thấy dữ liệu.</td></tr>
                                     ) : paginatedData.map((t: any) => (
                                         <tr key={t.id} className="hover:bg-slate-50/50 transition-colors group">
+                                            <td className="px-6 py-4">
+                                                <span className="font-mono text-blue-600 font-black text-xs">#{t.id}</span>
+                                            </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-sm"><UserIcon /></div>
@@ -324,7 +328,10 @@ export default function AdminDashboardClient({ tenants, leads, stats }: { tenant
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100"><UserIcon /></div>
                                     <div>
-                                        <p className="font-bold text-slate-900 leading-tight">{activeTab === 'tenants' ? item.company_name : item.customer_name}</p>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-mono text-blue-600 font-black text-[10px]">#{item.id}</span>
+                                            <p className="font-bold text-slate-900 leading-tight">{activeTab === 'tenants' ? item.company_name : item.customer_name}</p>
+                                        </div>
                                         <p className="text-[11px] text-slate-400 font-medium">
                                             {activeTab === 'tenants' ? `User: ${item.username}` : `SĐT: ${item.phone_number}`}
                                         </p>
