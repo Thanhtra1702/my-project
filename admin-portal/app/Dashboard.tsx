@@ -16,8 +16,10 @@ const CloseIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" heig
 const LogOutIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>);
 const RefreshIcon = ({ spin }: { spin: boolean }) => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-700 ${spin ? 'animate-spin' : ''}`}><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>);
 const SortIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>);
-const ChevronLeftIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>);
-const ChevronRightIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>);
+const ChevronLeftIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>);
+const ChevronRightIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>);
+const ChevronFirstIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="11 17 6 12 11 7"></polyline><polyline points="18 17 13 12 18 7"></polyline></svg>);
+const ChevronLastIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg>);
 
 // --- INTERFACES (Giữ nguyên) ---
 interface Lead {
@@ -67,7 +69,7 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 50;
+  const [itemsPerPage, setItemsPerPage] = useState(50);
 
   // States Hệ thống
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -124,14 +126,19 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
     return result;
   }, [leads, searchTerm, sortOrder]);
 
-  const totalPages = Math.ceil(filteredLeads.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredLeads.length / itemsPerPage);
   const paginatedLeads = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredLeads.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredLeads, currentPage]);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredLeads.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredLeads, currentPage, itemsPerPage]);
 
   const handleSearchChange = (val: string) => {
     setSearchTerm(val);
+    setCurrentPage(1);
+  };
+
+  const handleItemsPerPageChange = (val: number) => {
+    setItemsPerPage(val);
     setCurrentPage(1);
   };
 
@@ -293,6 +300,24 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </div>
               </div>
+              <div className="relative min-w-[140px]">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h18M3 6h18M3 18h18" /></svg>
+                </div>
+                <select
+                  className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 focus:outline-none focus:border-blue-500 appearance-none cursor-pointer"
+                  value={itemsPerPage}
+                  onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+                >
+                  <option value={10}>Hiển thị: 10 dòng</option>
+                  <option value={20}>Hiển thị: 20 dòng</option>
+                  <option value={50}>Hiển thị: 50 dòng</option>
+                  <option value={100}>Hiển thị: 100 dòng</option>
+                </select>
+                <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+              </div>
               <div className="h-6 w-px bg-slate-200 hidden md:block mx-1"></div>
               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap text-center lg:text-left">Kết quả: <span className="text-blue-600 font-black">{filteredLeads.length}</span></div>
             </div>
@@ -374,23 +399,78 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
               ))}
             </div>
 
-            {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 py-2">
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Trang {currentPage} / {totalPages}</div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} className={`p-2 rounded-xl border border-slate-200 transition-all ${currentPage === 1 ? 'opacity-30 cursor-not-allowed bg-slate-50' : 'hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 bg-white'}`}><ChevronLeftIcon /></button>
-                  <div className="flex items-center gap-1">
+            {totalPages >= 1 && filteredLeads.length > 0 && (
+              <div className="flex items-center justify-center gap-2 py-8">
+                <div className="flex items-center gap-1 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
+                  {/* First Page */}
+                  <button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${currentPage === 1 ? 'text-slate-200 cursor-not-allowed' : 'text-slate-500 hover:bg-slate-50 hover:text-blue-600'}`}
+                  >
+                    <ChevronFirstIcon />
+                  </button>
+
+                  {/* Prev Page */}
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${currentPage === 1 ? 'text-slate-200 cursor-not-allowed' : 'text-slate-500 hover:bg-slate-50 hover:text-blue-600'}`}
+                  >
+                    <ChevronLeftIcon />
+                  </button>
+
+                  <div className="flex items-center gap-1 mx-1">
                     {(() => {
-                      let startPage = Math.max(1, currentPage - 1);
-                      let endPage = Math.min(totalPages, startPage + 3);
-                      if (endPage - startPage < 3) startPage = Math.max(1, endPage - 3);
-                      const pages = []; for (let p = startPage; p <= endPage; p++) pages.push(p);
-                      return pages.map(pageNum => (
-                        <button key={pageNum} onClick={() => setCurrentPage(pageNum)} className={`w-10 h-10 rounded-xl text-xs font-black transition-all ${currentPage === pageNum ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:bg-slate-100 border border-transparent'}`}>{pageNum}</button>
+                      const pages = [];
+                      const delta = 2; // Số trang hiển thị quanh trang hiện tại
+                      const left = currentPage - delta;
+                      const right = currentPage + delta;
+
+                      for (let i = 1; i <= totalPages; i++) {
+                        if (i === 1 || i === totalPages || (i >= left && i <= right)) {
+                          pages.push(i);
+                        } else if (i === left - 1 || i === right + 1) {
+                          pages.push('...');
+                        }
+                      }
+
+                      // Loại bỏ các dấu ... trùng lặp
+                      const uniquePages = pages.filter((item, pos, self) => self.indexOf(item) === pos);
+
+                      return uniquePages.map((p, idx) => (
+                        p === '...' ? (
+                          <span key={`gap-${idx}`} className="w-9 h-9 flex items-center justify-center text-slate-300 font-bold">...</span>
+                        ) : (
+                          <button
+                            key={p}
+                            onClick={() => setCurrentPage(Number(p))}
+                            className={`w-9 h-9 rounded-xl text-[13px] font-black transition-all ${currentPage === p ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:bg-slate-50'}`}
+                          >
+                            {p}
+                          </button>
+                        )
                       ));
                     })()}
                   </div>
-                  <button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} className={`p-2 rounded-xl border border-slate-200 transition-all ${currentPage === totalPages ? 'opacity-30 cursor-not-allowed bg-slate-50' : 'hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 bg-white'}`}><ChevronRightIcon /></button>
+
+                  {/* Next Page */}
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${currentPage === totalPages ? 'text-slate-200 cursor-not-allowed' : 'text-slate-500 hover:bg-slate-50 hover:text-blue-600'}`}
+                  >
+                    <ChevronRightIcon />
+                  </button>
+
+                  {/* Last Page */}
+                  <button
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${currentPage === totalPages ? 'text-slate-200 cursor-not-allowed' : 'text-slate-500 hover:bg-slate-50 hover:text-blue-600'}`}
+                  >
+                    <ChevronLastIcon />
+                  </button>
                 </div>
               </div>
             )}
