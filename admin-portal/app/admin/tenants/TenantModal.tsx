@@ -129,13 +129,13 @@ export default function TenantModal({ tenant, onClose }: { tenant: any, onClose:
                   </div>
                 )}
 
-                {/* OpenAI API KEY */}
+                {/* OpenAI/Gemini API KEY */}
                 <div>
-                  <label className={labelClass}>OpenAI API Key (Tùy chọn)</label>
+                  <label className={labelClass}>OpenAI/Gemini API Key (Tùy chọn)</label>
                   <input
                     name="apiKey"
                     type="password"
-                    placeholder={tenant ? "******** (Đã bảo mật)" : "sk-..."}
+                    placeholder={tenant ? "******** (Đã bảo mật)" : "Nhập API Key..."}
                     className={`${inputClass} font-mono text-xs`}
                     autoComplete="off"
                   />
