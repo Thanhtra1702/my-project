@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import TenantModal from './tenants/TenantModal';
 
@@ -26,6 +26,11 @@ export default function AdminDashboardClient({ tenants, leads, stats }: { tenant
     const [tenantFilter, setTenantFilter] = useState<string>('all');
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(50);
+
+    // Cuộn lên đầu trang khi chuyển trang
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [currentPage]);
 
     // States Tenant
     const [showModal, setShowModal] = useState(false);

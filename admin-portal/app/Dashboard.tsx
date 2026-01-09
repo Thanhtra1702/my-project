@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useTransition } from 'react';
+import { useState, useMemo, useTransition, useEffect } from 'react';
 // SỬA DÒNG NÀY: Dùng ./actions thay vì @/lib/actions để trỏ đúng file cùng thư mục app
 import { getChatHistory, logout, toggleBotStatus } from './actions';
 import { useRouter } from 'next/navigation';
@@ -70,6 +70,11 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
+
+  // Cuộn lên đầu trang khi chuyển trang
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentPage]);
 
   // States Hệ thống
   const [isRefreshing, setIsRefreshing] = useState(false);
