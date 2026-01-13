@@ -54,24 +54,25 @@ export default async function AdminDashboard() {
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 bg-opacity-90 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex justify-between items-center h-16 sm:h-20">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-600/20">B</div>
+            <div className="flex items-center gap-4">
+              <img src="/logo.png" alt="BlueData Logo" className="h-9 w-auto object-contain" />
+              <div className="h-8 w-px bg-slate-200"></div>
               <div>
-                <h1 className="text-lg font-black tracking-tight text-slate-800 leading-none">BlueData</h1>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                  Quản trị: <span className="text-blue-600">{user.username}</span>
+                <h1 className="text-sm font-black tracking-tight text-slate-800 leading-none">BlueAI Admin</h1>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">
+                  Quản trị: <span className="text-blue-600 font-black">{user.username}</span>
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="hidden sm:block text-right">
+              <div className="text-right">
                 <span className="text-[10px] font-black bg-slate-50 text-slate-400 px-3 py-1.5 rounded-lg border border-slate-100 uppercase tracking-widest leading-none shadow-sm">Super Admin</span>
               </div>
-              <div className="h-6 w-px bg-slate-200 hidden sm:block"></div>
+              <div className="h-6 w-px bg-slate-200"></div>
               <form action={logout}>
                 <button className="flex items-center gap-2 text-slate-400 hover:text-rose-600 transition-colors text-sm font-bold uppercase tracking-widest group">
-                  <span className="hidden sm:inline">Thoát</span>
+                  <span className="inline">Thoát</span>
                   <div className="group-hover:translate-x-1 transition-transform">
                     <LogOutIcon />
                   </div>

@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "BlueData Admin Portal",
   description: "Hệ thống quản trị BlueData",
+  icons: {
+    icon: '/favicon.png',
+  },
 };
 
 export default function RootLayout({

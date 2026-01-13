@@ -166,11 +166,12 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
         )}
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex justify-between items-center h-16 sm:h-20">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-600/20">B</div>
-              <div className="max-w-[140px] sm:max-w-none">
-                <h1 className="text-sm sm:text-lg font-black tracking-tight text-slate-800 leading-none truncate">{companyName || 'BlueData'}</h1>
-                <p className="text-[10px] font-bold text-slate-400 tracking-wider lowercase mt-1 truncate">{email || `ID: #${tenantId}`}</p>
+            <div className="flex items-center gap-4">
+              <img src="/logo.png" alt="Logo" className="h-8 sm:h-9 w-auto object-contain" />
+              <div className="h-8 w-px bg-slate-200"></div>
+              <div className="max-w-[200px] sm:max-w-none">
+                <h1 className="text-sm font-black tracking-tight text-slate-800 leading-none truncate">{companyName || 'BlueAI'}</h1>
+                <p className="text-[10px] font-bold text-slate-400 tracking-wider lowercase mt-1.5 truncate">{email || `ID: #${tenantId}`}</p>
               </div>
             </div>
 

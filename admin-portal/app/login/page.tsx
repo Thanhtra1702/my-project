@@ -26,11 +26,8 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#f8f9fa] flex flex-col font-['Inter',_Arial,_sans-serif]">
       {/* HEADER */}
       <header className="bg-white h-[60px] flex items-center shadow-[0_2px_8px_0_rgba(0,0,0,0.03)] border-b border-[#e5e7eb] px-6 sm:px-12">
-        <div className="max-w-[1200px] mx-auto w-full flex items-center justify-between">
-          <div className="flex items-center">
-            <span className="bg-[#2563eb] font-bold rounded-lg w-8 h-8 flex items-center justify-center text-lg text-white mr-2">B</span>
-            <span className="text-[#2563eb] font-bold text-xl">BlueData</span>
-          </div>
+        <div className="max-w-[1200px] mx-auto w-full flex items-center">
+          <img src="/logo.png" alt="BlueAI Logo" className="h-9 w-auto object-contain" />
         </div>
       </header>
 
