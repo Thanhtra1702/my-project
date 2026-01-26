@@ -30,9 +30,9 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Lấy domain hiện tại để làm returnUrl
+    // Lấy domain hiện tại để làm returnUrl, thêm ?sso=true để tránh lỗi nối chuỗi & từ Portal
     if (typeof window !== 'undefined') {
-      setReturnUrl(encodeURIComponent(window.location.origin + '/login'));
+      setReturnUrl(encodeURIComponent(window.location.origin + '/login?sso=true'));
     }
 
     // Kiểm tra xem    // Portal có thể trả về token theo nhiều cách khác nhau
