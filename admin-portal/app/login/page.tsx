@@ -2,8 +2,11 @@
 
 import { useFormState } from 'react-dom';
 import { useFormStatus } from 'react-dom';
-import { login } from '@/app/actions';
+import { login, loginWithToken } from '@/app/actions';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { ShieldCheck, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -21,6 +24,65 @@ function SubmitButton() {
 
 export default function LoginPage() {
   const [state, formAction] = useFormState(login, null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [ssoError, setSsoError] = useState<string | null>(null);
+  const [returnUrl, setReturnUrl] = useState('');
+  const router = useRouter();
+
+  useEffect(() => {
+    // Lấy domain hiện tại để làm returnUrl
+    if (typeof window !== 'undefined') {
+      setReturnUrl(encodeURIComponent(window.location.origin + '/login'));
+    }
+
+    // Kiểm tra xem    // Portal có thể trả về token theo nhiều cách khác nhau
+    const searchParams = new URLSearchParams(window.location.search);
+    const fullHash = window.location.hash;
+
+    // Gộp tất cả params từ cả query và hash vào một chỗ để tìm
+    const allParams = new URLSearchParams(searchParams);
+
+    // Xử lý nested query trong hash (ví dụ: #/login?token=...)
+    const nestedQueryIdx = fullHash.indexOf('?');
+    if (nestedQueryIdx !== -1) {
+      new URLSearchParams(fullHash.substring(nestedQueryIdx + 1)).forEach((v, k) => allParams.append(k, v));
+    }
+
+    // Xử lý fragment params (ví dụ: #token=...)
+    const fragment = fullHash.startsWith('#') ? fullHash.substring(1) : fullHash;
+    if (fragment && !fragment.includes('?')) {
+      new URLSearchParams(fragment).forEach((v, k) => allParams.append(k, v));
+    }
+
+    // Tìm token không phân biệt chữ hoa chữ thường
+    let foundToken = '';
+    allParams.forEach((val, key) => {
+      const k = key.toLowerCase();
+      if (k === 'token' || k === 'access_token' || k === 'accesstoken') {
+        foundToken = val;
+      }
+    });
+
+    if (foundToken) {
+      console.log("🎟️ Đã tìm thấy SSO Token, đang tiến hành xác thực...");
+      handleSsoToken(foundToken);
+    }
+  }, [router]);
+
+  async function handleSsoToken(token: string) {
+    setIsVerifying(true);
+    setSsoError(null);
+    try {
+      const result = await loginWithToken(token);
+      if (result?.error) {
+        setSsoError(result.error);
+      }
+    } catch (err) {
+      setSsoError("Lỗi hệ thống khi xác thực token SSO");
+    } finally {
+      setIsVerifying(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] flex flex-col font-['Inter',_Arial,_sans-serif]">
@@ -38,9 +100,16 @@ export default function LoginPage() {
           <p className="text-[#6b7280] text-center mb-4">Chào mừng bạn trở lại!</p>
 
           <form action={formAction} className="flex flex-col">
-            {state?.error && (
+            {(state?.error || ssoError) && (
               <div className="mb-4 bg-rose-50 text-rose-600 text-sm font-semibold px-4 py-3 rounded-lg border border-rose-100 flex items-center gap-2">
-                ⚠️ {state.error}
+                ⚠️ {state?.error || ssoError}
+              </div>
+            )}
+
+            {isVerifying && (
+              <div className="mb-4 bg-blue-50 text-blue-600 text-sm font-semibold px-4 py-3 rounded-lg border border-blue-100 flex items-center gap-2">
+                <Loader2 className="animate-spin w-4 h-4" />
+                Đang xác thực tài khoản từ Portal...
               </div>
             )}
 
@@ -81,6 +150,20 @@ export default function LoginPage() {
             </div>
 
             <SubmitButton />
+
+            <div className="flex items-center my-6">
+              <div className="flex-1 border-t border-[#e5e7eb]"></div>
+              <span className="px-4 text-[#9ca3af] text-sm">HOẶC</span>
+              <div className="flex-1 border-t border-[#e5e7eb]"></div>
+            </div>
+
+            <a
+              href={`https://bluesso.bluedata.vn/#/login?returnUrl=${returnUrl}&redirect_uri=${returnUrl}&callback=${returnUrl}&redirect=${returnUrl}&from=${returnUrl}`}
+              className="w-full bg-[#f0f7ff] border border-[#bfdbfe] hover:bg-[#e0efff] text-[#2563eb] font-semibold py-3 rounded-lg transition-all flex justify-center items-center gap-3 text-base shadow-sm"
+            >
+              <ShieldCheck className="w-5 h-5" />
+              Đăng nhập qua Portal Công ty
+            </a>
           </form>
 
         </div>

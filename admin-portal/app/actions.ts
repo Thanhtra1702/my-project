@@ -8,7 +8,7 @@ import { decrypt } from '@/lib/crypto';
 import { sendResetPasswordEmail } from '@/lib/mail';
 import { headers } from 'next/headers';
 
-// --- 1. LOGIN ---
+// --- 1. LOGIN (LOCAL) ---
 export async function login(prevState: any, formData: FormData) {
   const username = formData.get('username') as string;
   const password = formData.get('password') as string;
@@ -20,7 +20,11 @@ export async function login(prevState: any, formData: FormData) {
     );
     const user = result.rows[0];
 
-    if (!user) return { error: 'Sai tài khoản hoặc mật khẩu!' };
+    if (!user) {
+      // Nếu không tìm thấy local, thử gọi SSO API
+      return await loginWithSSO(username, password);
+    }
+
     if (!user.is_active) return { error: 'Tài khoản này đang bị khóa.' };
 
     const cookieStore = await cookies();
@@ -36,6 +40,119 @@ export async function login(prevState: any, formData: FormData) {
     console.error("Login Error:", error);
     return { error: 'Lỗi đăng nhập hệ thống' };
   }
+}
+
+// --- 1.1 LOGIN (COMPANY SSO API) ---
+export async function loginWithSSO(username: string, password: string) {
+  try {
+    console.log(`🌐 Đang xác thực SSO cho: ${username}`);
+    const res = await fetch('https://bluesso.bluedata.vn/api/Auth/authenticate', {
+      method: 'POST',
+      headers: {
+        'accept': '*/*',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userName: username,
+        password: password
+      }),
+      cache: 'no-store'
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      return { error: errorData?.message || 'Xác thực SSO thất bại hoặc sai tài khoản!' };
+    }
+
+    const data = await res.json();
+    const token = data.token || data.accessToken || data.access_token;
+
+    if (!token) {
+      return { error: 'Không nhận được access token từ hệ thống SSO.' };
+    }
+
+    // Sau khi có token, ta cần tìm user tương ứng trong hệ thống của mình
+    const userRes = await adminDb.query(
+      'SELECT * FROM tenants WHERE username = $1 OR email = $1',
+      [username]
+    );
+    const user = userRes.rows[0];
+
+    if (!user) {
+      return { error: 'Tài khoản đã xác thực thành công nhưng không có quyền truy cập vào Admin Portal này. Vui lòng liên hệ quản trị viên.' };
+    }
+
+    return await establishSession(user, token);
+
+  } catch (error: any) {
+    if (error?.digest?.startsWith('NEXT_REDIRECT')) throw error;
+    console.error("SSO Login Error:", error);
+    return { error: 'Lỗi kết nối tới hệ thống SSO công ty' };
+  }
+}
+
+// --- 1.1.1 LOGIN WITH TOKEN (CALLBACK) ---
+export async function loginWithToken(token: string) {
+  try {
+    console.log(`🎟️ Đang xác thực token SSO nhận được...`);
+
+    // Giả sử token là JWT, ta decode để lấy username/email
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      return { error: 'Token không hợp lệ hoặc không đúng định dạng JWT.' };
+    }
+
+    // Decode base64 payload
+    const payloadStr = Buffer.from(parts[1], 'base64').toString();
+    const payload = JSON.parse(payloadStr);
+
+    // Các field phổ biến trong JWT của BlueData (giả định)
+    const identification = payload.unique_name ||
+      payload.email ||
+      payload.sub ||
+      payload.userName ||
+      payload.uniqueName ||
+      payload.name ||
+      payload.id;
+
+    if (!identification) {
+      return { error: 'Không thể xác định danh tính từ token SSO.' };
+    }
+
+    const userRes = await adminDb.query(
+      'SELECT * FROM tenants WHERE username = $1 OR email = $1',
+      [identification]
+    );
+    const user = userRes.rows[0];
+
+    if (!user) {
+      return { error: `Tài khoản '${identification}' chưa được phân quyền trong hệ thống.` };
+    }
+
+    return await establishSession(user, token);
+  } catch (error: any) {
+    if (error?.digest?.startsWith('NEXT_REDIRECT')) throw error;
+    console.error("Token Auth Error:", error);
+    return { error: 'Lỗi khi xử lý token SSO.' };
+  }
+}
+
+async function establishSession(user: any, token: string) {
+  if (!user.is_active) return { error: 'Tài khoản này đang bị khóa.' };
+
+  const cookieStore = await cookies();
+  cookieStore.set('tenant_id', user.id.toString(), {
+    httpOnly: true, path: '/', maxAge: 86400,
+    secure: process.env.NODE_ENV === 'production', sameSite: 'lax'
+  });
+
+  cookieStore.set('sso_token', token, {
+    httpOnly: true, path: '/', maxAge: 86400,
+    secure: process.env.NODE_ENV === 'production', sameSite: 'lax'
+  });
+
+  if (user.role === 'SUPER_ADMIN') redirect('/admin');
+  else redirect('/');
 }
 
 // --- 1.2 FORGOT PASSWORD ---
