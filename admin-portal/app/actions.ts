@@ -72,14 +72,16 @@ export async function loginWithSSO(username: string, password: string) {
     }
 
     // Sau khi có token, ta cần tìm user tương ứng trong hệ thống của mình
+    console.log(`🔍 Tìm kiếm tenant cho identification: ${username}`);
     const userRes = await adminDb.query(
-      'SELECT * FROM tenants WHERE username = $1 OR email = $1',
+      'SELECT * FROM tenants WHERE LOWER(username) = LOWER($1) OR LOWER(email) = LOWER($1)',
       [username]
     );
     const user = userRes.rows[0];
 
     if (!user) {
-      return { error: 'Tài khoản đã xác thực thành công nhưng không có quyền truy cập vào Admin Portal này. Vui lòng liên hệ quản trị viên.' };
+      console.error(`❌ Không tìm thấy user '${username}' trong bảng tenants.`);
+      return { error: `Tài khoản '${username}' đã xác thực SSO thành công nhưng chưa được cấp quyền trên Admin Portal này.` };
     }
 
     return await establishSession(user, token);
