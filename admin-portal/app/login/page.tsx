@@ -158,7 +158,7 @@ export default function LoginPage() {
             </div>
 
             <a
-              href={`https://bluesso.bluedata.vn/#/login?returnUrl=${returnUrl}&redirect_uri=${returnUrl}&callback=${returnUrl}&redirect=${returnUrl}&from=${returnUrl}`}
+              href={`https://bluesso.bluedata.vn/?returnUrl=${returnUrl}&redirect_uri=${returnUrl}#/login`}
               className="w-full bg-[#f0f7ff] border border-[#bfdbfe] hover:bg-[#e0efff] text-[#2563eb] font-semibold py-3 rounded-lg transition-all flex justify-center items-center gap-3 text-base shadow-sm"
             >
               <ShieldCheck className="w-5 h-5" />
