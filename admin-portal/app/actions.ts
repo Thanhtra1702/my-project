@@ -59,10 +59,36 @@ export async function login(prevState: any, formData: FormData) {
       'SELECT * FROM tenants WHERE LOWER(username) = LOWER($1) OR LOWER(email) = LOWER($1)',
       [username]
     );
-    const user = userRes.rows[0];
+    let user = userRes.rows[0];
 
+    // --- BỔ SUNG: TỰ ĐỘNG TẠO USER NẾU CHƯA CÓ (JIT Provisioning) ---
     if (!user) {
-      return { error: `Tài khoản '${username}' hợp lệ nhưng chưa được phân quyền trong hệ thống.` };
+      console.log(`✨ Đang tự động khởi tạo tài khoản mới cho: ${username}`);
+
+      let email = username.includes('@') ? username : `${username}@bluedata.vn`;
+      let displayName = username;
+
+      // Thử giải mã JWT để lấy thông tin chính xác hơn
+      try {
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+          email = payload.email || payload.unique_name || email;
+          displayName = payload.name || payload.unique_name || payload.userName || username;
+        }
+      } catch (e) {
+        console.error("Lỗi giải mã Token khi tạo user mới:", e);
+      }
+
+      // Thêm user mới vào database với vai trò mặc định là TENANT
+      const insertRes = await adminDb.query(
+        `INSERT INTO tenants (username, email, role, is_active, company_name) 
+         VALUES ($1, $2, $3, $4, $5) 
+         RETURNING *`,
+        [username, email, 'TENANT', true, `Tenant ${displayName}`]
+      );
+      user = insertRes.rows[0];
+      console.log(`✅ Đã tạo tài khoản ID: ${user.id} cho ${username}`);
     }
 
     // 5. Lưu session và token
@@ -75,56 +101,6 @@ export async function login(prevState: any, formData: FormData) {
   }
 }
 
-// --- 1.1 LOGIN (COMPANY SSO API) ---
-export async function loginWithSSO(username: string, password: string) {
-  try {
-    console.log(`🌐 Đang xác thực SSO cho: ${username}`);
-    const res = await fetch('https://bluesso.bluedata.vn/api/Auth/authenticate', {
-      method: 'POST',
-      headers: {
-        'accept': '*/*',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        userName: username,
-        password: password
-      }),
-      cache: 'no-store'
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      return { error: errorData?.message || 'Xác thực SSO thất bại hoặc sai tài khoản!' };
-    }
-
-    const data = await res.json();
-    const token = data.token || data.accessToken || data.access_token;
-
-    if (!token) {
-      return { error: 'Không nhận được access token từ hệ thống SSO.' };
-    }
-
-    // Sau khi có token, ta cần tìm user tương ứng trong hệ thống của mình
-    console.log(`🔍 Tìm kiếm tenant cho identification: ${username}`);
-    const userRes = await adminDb.query(
-      'SELECT * FROM tenants WHERE LOWER(username) = LOWER($1) OR LOWER(email) = LOWER($1)',
-      [username]
-    );
-    const user = userRes.rows[0];
-
-    if (!user) {
-      console.error(`❌ Không tìm thấy user '${username}' trong bảng tenants.`);
-      return { error: `Tài khoản '${username}' đã xác thực SSO thành công nhưng chưa được cấp quyền trên Admin Portal này.` };
-    }
-
-    return await establishSession(user, token);
-
-  } catch (error: any) {
-    if (error?.digest?.startsWith('NEXT_REDIRECT')) throw error;
-    console.error("SSO Login Error:", error);
-    return { error: 'Lỗi kết nối tới hệ thống SSO công ty' };
-  }
-}
 
 // --- 1.1.1 LOGIN WITH TOKEN (CALLBACK) ---
 export async function loginWithToken(token: string) {
@@ -155,13 +131,20 @@ export async function loginWithToken(token: string) {
     }
 
     const userRes = await adminDb.query(
-      'SELECT * FROM tenants WHERE username = $1 OR email = $1',
+      'SELECT * FROM tenants WHERE LOWER(username) = LOWER($1) OR LOWER(email) = LOWER($1)',
       [identification]
     );
-    const user = userRes.rows[0];
+    let user = userRes.rows[0];
 
     if (!user) {
-      return { error: `Tài khoản '${identification}' chưa được phân quyền trong hệ thống.` };
+      console.log(`✨ Đang tự động khởi tạo tài khoản mới cho: ${identification}`);
+      const insertRes = await adminDb.query(
+        `INSERT INTO tenants (username, email, role, is_active, company_name) 
+         VALUES ($1, $2, $3, $4, $5) 
+         RETURNING *`,
+        [identification, payload.email || `${identification}@bluedata.vn`, 'TENANT', true, `Tenant ${payload.name || identification}`]
+      );
+      user = insertRes.rows[0];
     }
 
     return await establishSession(user, token);
@@ -246,6 +229,7 @@ export async function resetPassword(prevState: any, formData: FormData) {
 export async function logout() {
   const cookieStore = await cookies();
   cookieStore.delete('tenant_id');
+  cookieStore.delete('sso_token');
   redirect('/login');
 }
 
