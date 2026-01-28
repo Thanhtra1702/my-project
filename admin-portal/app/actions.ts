@@ -8,37 +8,70 @@ import { decrypt } from '@/lib/crypto';
 import { sendResetPasswordEmail } from '@/lib/mail';
 import { headers } from 'next/headers';
 
-// --- 1. LOGIN (LOCAL) ---
+// --- 1. LOGIN (MAIN - CALLS SSO API) ---
 export async function login(prevState: any, formData: FormData) {
   const username = formData.get('username') as string;
   const password = formData.get('password') as string;
 
   try {
-    const result = await adminDb.query(
-      'SELECT * FROM tenants WHERE (username = $1 OR email = $1) AND password_hash = $2',
-      [username, password]
-    );
-    const user = result.rows[0];
-
-    if (!user) {
-      // Nếu không tìm thấy local, thử gọi SSO API
-      return await loginWithSSO(username, password);
-    }
-
-    if (!user.is_active) return { error: 'Tài khoản này đang bị khóa.' };
-
-    const cookieStore = await cookies();
-    cookieStore.set('tenant_id', user.id.toString(), {
-      httpOnly: true, path: '/', maxAge: 86400,
-      secure: process.env.NODE_ENV === 'production', sameSite: 'lax'
+    // 1. CHỈNH SỬA: Luôn ưu tiên xác thực qua SSO API công ty
+    console.log(`🌐 Đang xác thực SSO cho: ${username}`);
+    const res = await fetch('https://bluesso.bluedata.vn/api/Auth/authenticate', {
+      method: 'POST',
+      headers: {
+        'accept': '*/*',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userName: username,
+        password: password
+      }),
+      cache: 'no-store'
     });
 
-    if (user.role === 'SUPER_ADMIN') redirect('/admin');
-    else redirect('/');
+    // 2. Nếu SSO API thất bại, có thể thử kiểm tra Local DB (định hướng dự phòng)
+    if (!res.ok) {
+      const localResult = await adminDb.query(
+        'SELECT * FROM tenants WHERE (username = $1 OR email = $1) AND password_hash = $2',
+        [username, password]
+      );
+      const localUser = localResult.rows[0];
+
+      if (localUser) {
+        if (!localUser.is_active) return { error: 'Tài khoản này đang bị khóa.' };
+        return await establishSession(localUser, 'local_session');
+      }
+
+      const errorData = await res.json().catch(() => ({}));
+      return { error: errorData?.message || 'Sai tài khoản hoặc mật khẩu!' };
+    }
+
+    // 3. Nếu SSO thành công, lấy Token
+    const data = await res.json();
+    const token = data.token || data.accessToken || data.access_token;
+
+    if (!token) {
+      return { error: 'Không nhận được access token từ hệ thống SSO.' };
+    }
+
+    // 4. Tìm user trong DB để phân quyền
+    const userRes = await adminDb.query(
+      'SELECT * FROM tenants WHERE LOWER(username) = LOWER($1) OR LOWER(email) = LOWER($1)',
+      [username]
+    );
+    const user = userRes.rows[0];
+
+    if (!user) {
+      return { error: `Tài khoản '${username}' hợp lệ nhưng chưa được phân quyền trong hệ thống.` };
+    }
+
+    // 5. Lưu session và token
+    return await establishSession(user, token);
+
   } catch (error: any) {
     if (error?.digest?.startsWith('NEXT_REDIRECT')) throw error;
     console.error("Login Error:", error);
-    return { error: 'Lỗi đăng nhập hệ thống' };
+    return { error: 'Lỗi kết nối tới hệ thống xác thực' };
   }
 }
 
