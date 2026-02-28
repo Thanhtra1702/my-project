@@ -13,24 +13,46 @@ export async function login(prevState: any, formData: FormData) {
   const username = formData.get('username') as string;
   const password = formData.get('password') as string;
 
-  try {
-    // 1. CHỈNH SỬA: Luôn ưu tiên xác thực qua SSO API công ty
-    console.log(`🌐 Đang xác thực SSO cho: ${username}`);
-    const res = await fetch('https://bluesso.bluedata.vn/api/Auth/authenticate', {
-      method: 'POST',
-      headers: {
-        'accept': '*/*',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        userName: username,
-        password: password
-      }),
-      cache: 'no-store'
-    });
+  let ssoRes: Response | null = null;
+  let ssoData: any = null;
 
-    // 2. Nếu SSO API thất bại, có thể thử kiểm tra Local DB (định hướng dự phòng)
-    if (!res.ok) {
+  try {
+    // 1. Thử xác thực qua SSO API công ty
+    console.log(`🌐 Đang xác thực SSO cho: ${username}`);
+
+    // Sử dụng AbortController để giới hạn thời gian chờ SSO (tránh treo khi server không phản hồi)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 giây timeout
+
+    try {
+      ssoRes = await fetch('https://bluesso.bluedata.vn/api/Auth/authenticate', {
+        method: 'POST',
+        headers: {
+          'accept': '*/*',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userName: username,
+          password: password
+        }),
+        cache: 'no-store',
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (ssoRes.ok) {
+        ssoData = await ssoRes.json();
+      }
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      console.warn(`⚠️ Cảnh báo: SSO không phản hồi hoặc timeout cho ${username}. Báo lỗi:`, fetchError.message);
+      // Không ném lỗi ra ngoài catch lớn, mà để cascade xuống Local Auth bên dưới
+    }
+
+    // 2. Nếu SSO thất bại (không phản hồi, timeout, hoặc SAI tài khoản từ SSO)
+    // Thử kiểm tra Database cục bộ (Dự phòng cho Admin hoặc khi SSO chết)
+    if (!ssoData) {
+      console.log(`🕒 Đang kiểm tra Database nội bộ làm dự phòng cho: ${username}`);
       const localResult = await adminDb.query(
         'SELECT * FROM tenants WHERE (username = $1 OR email = $1) AND password_hash = $2',
         [username, password]
@@ -42,19 +64,28 @@ export async function login(prevState: any, formData: FormData) {
         return await establishSession(localUser, 'local_session');
       }
 
-      const errorData = await res.json().catch(() => ({}));
-      return { error: errorData?.message || 'Sai tài khoản hoặc mật khẩu!' };
+      // Nếu Local cụng không có, và SSO có phản hồi lỗi (ví dụ 401), dùng lỗi đó
+      if (ssoRes && !ssoRes.ok) {
+        const errorData = await ssoRes.json().catch(() => ({}));
+        return { error: errorData?.message || 'Sai tài khoản hoặc mật khẩu!' };
+      }
+
+      // Nếu SSO hoàn toàn không phản hồi và Local cũng không khớp
+      if (!ssoRes) {
+        return { error: 'Hệ thống xác thực hiện không khả dụng (SSO Down) và không tìm thấy tài khoản cục bộ.' };
+      }
+
+      return { error: 'Sai tài khoản hoặc mật khẩu!' };
     }
 
     // 3. Nếu SSO thành công, lấy Token
-    const data = await res.json();
-    const token = data.token || data.accessToken || data.access_token;
+    const token = ssoData.token || ssoData.accessToken || ssoData.access_token;
 
     if (!token) {
       return { error: 'Không nhận được access token từ hệ thống SSO.' };
     }
 
-    // 4. Tìm user trong DB để phân quyền
+    // 4. Tìm user trong DB để phân quyền (JIT Provisioning cho SSO User)
     const userRes = await adminDb.query(
       'SELECT * FROM tenants WHERE LOWER(username) = LOWER($1) OR LOWER(email) = LOWER($1)',
       [username]
@@ -96,8 +127,8 @@ export async function login(prevState: any, formData: FormData) {
 
   } catch (error: any) {
     if (error?.digest?.startsWith('NEXT_REDIRECT')) throw error;
-    console.error("Login Error:", error);
-    return { error: 'Lỗi kết nối tới hệ thống xác thực' };
+    console.error("Critical Login Error:", error);
+    return { error: 'Lỗi hệ thống khi xử lý đăng nhập.' };
   }
 }
 
@@ -330,5 +361,128 @@ export async function getChatHistory(conversation_id: string, tenant_id: number)
   } catch (error) {
     console.error('❌ Server Error fetching history:', error);
     return [];
+  }
+}
+
+// --- 5. GET SMART DASHBOARD STATS ---
+export async function getSmartStats(tenantId: number, startDate?: string, endDate?: string) {
+  try {
+    let dateFilter = '';
+
+    // Explicitly handle "all" to mean no date filtering
+    if (startDate === 'all') {
+      dateFilter = '';
+    } else if (startDate && endDate) {
+      dateFilter = `AND created_at BETWEEN '${startDate}' AND '${endDate}'`;
+    } else {
+      // Default to 30 days if nothing specified
+      dateFilter = `AND created_at >= CURRENT_DATE - INTERVAL '30 days'`;
+    }
+
+    // 1. Phân tích Chủ đề & Truy vấn (Nâng cấp tách cụm từ)
+    const topicsRes = await adminDb.query(`
+      SELECT note, created_at 
+      FROM leads 
+      WHERE tenant_id = $1 AND note IS NOT NULL AND note != ''
+      ${dateFilter}
+      ORDER BY created_at DESC 
+      LIMIT 500
+    `, [tenantId]);
+
+    const stopWords = [
+      'và', 'của', 'là', 'cho', 'có', 'trong', 'được', 'với', 'không', 'đến', 'về', 'cái', 'này', 'mình', 'em', 'anh', 'tôi', 'bot', 'chatbot',
+      'muốn', 'cần', 'xin', 'chào', 'giúp', 'cho', 'hỏi', 'làm', 'sao', 'thế', 'nào', 'cũng', 'biết', 'thêm', 'nhé', 'đi', 'lại', 'luôn',
+      'chưa', 'rồi', 'đang', 'vừa', 'xong', 'như', 'vậy', 'đó', 'kia', 'nào', 'đâu', 'ở', 'tại', 'vào', 'ra', 'lên', 'xuống', 'qua', 'lại'
+    ];
+
+    const phraseMap: Record<string, number> = {};
+
+    topicsRes.rows.forEach(row => {
+      const cleanNote = row.note.toLowerCase()
+        .replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, " ")
+        .trim();
+
+      const words = cleanNote.split(/\s+/).filter((w: string) => w.length > 0);
+
+      // A. Đếm nguyên câu (nếu câu ngắn - dưới 5 từ)
+      if (words.length > 0 && words.length <= 5) {
+        phraseMap[cleanNote] = (phraseMap[cleanNote] || 0) + 1;
+      }
+
+      // B. Tách Bi-grams (Cụm 2 từ có nghĩa)
+      for (let i = 0; i < words.length - 1; i++) {
+        const w1 = words[i];
+        const w2 = words[i + 1];
+
+        if (!stopWords.includes(w1) && !stopWords.includes(w2)) {
+          const bigram = `${w1} ${w2}`;
+          phraseMap[bigram] = (phraseMap[bigram] || 0) + 1;
+        }
+      }
+
+      // C. Tách từ đơn (chỉ khi là danh từ/động từ chính, dài > 3 ký tự)
+      words.forEach((w: string) => {
+        if (w.length > 3 && !stopWords.includes(w)) {
+          phraseMap[w] = (phraseMap[w] || 0) + 0.5; // Ưu tiên cụm từ hơn từ đơn
+        }
+      });
+    });
+
+    const topTopics = Object.entries(phraseMap)
+      .map(([name, value]) => ({ name, value: Math.ceil(value) }))
+      .sort((a, b) => b.value - a.value)
+      .filter(item => item.value >= 1)
+      .slice(0, 15);
+
+    // 2. Phân tích Lỗ hổng Kiến thức
+    const gapsRes = await adminDb.query(`
+      SELECT note as question, created_at 
+      FROM leads 
+      WHERE tenant_id = $1 
+      ${dateFilter}
+      AND (
+        note ILIKE '%không tìm thấy%' OR 
+        note ILIKE '%không có thông tin%' OR 
+        note ILIKE '%thiếu%' OR 
+        note ILIKE '%chưa có%' OR
+        note ILIKE '%xin lỗi%' OR
+        note ILIKE '%chưa rõ%'
+      )
+      ORDER BY created_at DESC 
+      LIMIT 20
+    `, [tenantId]);
+
+    // 3. Phân tích Giờ cao điểm
+    const peakHoursRes = await adminDb.query(`
+      SELECT 
+        EXTRACT(HOUR FROM created_at) as hour,
+        COUNT(*) as count
+      FROM token_logs
+      WHERE tenant_id = $1 
+      ${dateFilter}
+      GROUP BY hour
+      ORDER BY hour ASC
+    `, [tenantId]);
+
+    const peakHours = Array.from({ length: 24 }, (_, i) => ({
+      hour: `${i}h`,
+      count: Number(peakHoursRes.rows.find(r => Number(r.hour) === i)?.count || 0)
+    }));
+
+    return {
+      topTopics,
+      knowledgeGaps: gapsRes.rows,
+      peakHours,
+      lastUpdated: new Date().toISOString()
+    };
+
+  } catch (error) {
+    console.error("Smart Stats Error:", error);
+    return {
+      topTopics: [],
+      knowledgeGaps: [],
+      peakHours: [],
+      lastUpdated: new Date().toISOString()
+    };
   }
 }

@@ -2,6 +2,7 @@ import { adminDb } from '@/lib/db';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Dashboard from './Dashboard';
+import { getSmartStats } from './actions';
 
 export const revalidate = 0; // Luôn lấy dữ liệu mới nhất, không dùng cache
 
@@ -70,6 +71,9 @@ export default async function Home() {
     ORDER BY d.day ASC
   `, [tenantId]);
 
+  // FETCH SMART STATS
+  const smartStats = await getSmartStats(Number(tenantId));
+
   return (
     <Dashboard
       leads={leadsRes.rows}
@@ -80,7 +84,8 @@ export default async function Home() {
       chartData={chartRes.rows}
       isSystemLocked={!user.is_active}
       initialBotStatus={user.is_bot_enabled}
-      tokenLimit={user.token_limit || 100000} // <--- TRUYỀN XUỐNG DASHBOARD
+      tokenLimit={user.token_limit || 100000}
+      smartStats={smartStats}
     />
   );
 }

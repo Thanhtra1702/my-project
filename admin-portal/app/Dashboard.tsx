@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useTransition, useEffect } from 'react';
 // SỬA DÒNG NÀY: Dùng ./actions thay vì @/lib/actions để trỏ đúng file cùng thư mục app
-import { getChatHistory, logout, toggleBotStatus } from './actions';
+import { getChatHistory, logout, toggleBotStatus, getSmartStats } from './actions';
 import { useRouter } from 'next/navigation';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -42,6 +42,12 @@ interface DashboardProps {
   isSystemLocked: boolean;
   initialBotStatus: boolean;
   tokenLimit: number;
+  smartStats: {
+    topTopics: { name: string; value: number }[];
+    knowledgeGaps: { question: string; created_at: string }[];
+    peakHours: { hour: string; count: number }[];
+    lastUpdated: string;
+  };
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -58,9 +64,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-export default function Dashboard({ leads, tenantId, companyName, email, stats, chartData, isSystemLocked, initialBotStatus, tokenLimit }: DashboardProps) {
+export default function Dashboard({ leads, tenantId, companyName, email, stats, chartData, isSystemLocked, initialBotStatus, tokenLimit, smartStats }: DashboardProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'overview' | 'leads'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'smart'>('overview');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [loadingChat, setLoadingChat] = useState(false);
@@ -70,6 +76,13 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
+
+  // Smart Dashboard States
+  const [localSmartStats, setLocalSmartStats] = useState(smartStats);
+  const [selectedRange, setSelectedRange] = useState<'7d' | '30d' | '90d' | 'all' | 'custom'>('30d');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+  const [isLoadingSmart, setIsLoadingSmart] = useState(false);
 
   // Cuộn lên đầu trang khi chuyển trang
   useEffect(() => {
@@ -93,7 +106,7 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
     const newStatus = !botEnabled;
     setBotEnabled(newStatus);
     startTransition(async () => {
-      await toggleBotStatus(botEnabled);
+      await toggleBotStatus(newStatus);
     });
   };
 
@@ -102,10 +115,8 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
     setLoadingChat(true);
     setMessages([]);
 
-    // Gọi hàm từ actions.ts (giờ là gọi API)
     const history = await getChatHistory(lead.conversation_id, Number(tenantId));
 
-    // SỬA: Không dùng .reverse() nữa vì Dify hoặc API đã trả về đúng thứ tự Cũ -> Mới
     if (Array.isArray(history)) {
       setMessages(history);
     } else {
@@ -115,7 +126,51 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
     setLoadingChat(false);
   };
 
-  // --- LOGIC FILTER (Giữ nguyên) ---
+  const handleRangeChange = async (range: '7d' | '30d' | '90d' | 'all' | 'custom') => {
+    setSelectedRange(range);
+
+    if (range === 'custom') {
+      return; // Wait for user to input dates and click apply
+    }
+
+    setIsLoadingSmart(true);
+    let startDate: string | undefined;
+    const endDate = new Date().toISOString();
+
+    if (range === 'all') {
+      startDate = 'all';
+    } else {
+      const days = range === '7d' ? 7 : range === '30d' ? 30 : 90;
+      const start = new Date();
+      start.setDate(start.getDate() - days);
+      startDate = start.toISOString();
+    }
+
+    const newData = await getSmartStats(Number(tenantId), startDate, endDate);
+    if (newData) {
+      setLocalSmartStats(newData);
+    }
+    setIsLoadingSmart(false);
+  };
+
+  const handleCustomRangeApply = async () => {
+    if (!customStartDate || !customEndDate) return;
+    setIsLoadingSmart(true);
+    const start = new Date(customStartDate).toISOString();
+    const endDateObj = new Date(customEndDate);
+    endDateObj.setHours(23, 59, 59, 999);
+    const end = endDateObj.toISOString();
+
+    const newData = await getSmartStats(Number(tenantId), start, end);
+    if (newData) {
+      setLocalSmartStats(newData);
+    }
+    setIsLoadingSmart(false);
+  };
+
+  const usagePercent = Math.min((Number(stats.total_tokens_all_time) / (tokenLimit || 1)) * 100, 100);
+
+  // --- LOGIC FILTER ---
   const filteredLeads = useMemo(() => {
     let result = leads.filter(l =>
       l.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -151,8 +206,6 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
     setSortOrder(val);
     setCurrentPage(1);
   };
-
-  const usagePercent = Math.min((Number(stats.total_tokens_all_time) / (tokenLimit || 1)) * 100, 100);
 
   return (
     <div className="min-h-screen font-sans text-slate-900 bg-slate-50/50">
@@ -200,6 +253,7 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
           </div>
           <div className="flex overflow-x-auto scrollbar-hide gap-6 sm:gap-8 mt-1 border-t border-slate-50/50">
             <TabButton active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} label="Tổng quan" />
+            <TabButton active={activeTab === 'smart'} onClick={() => setActiveTab('smart')} label="Thống kê người dùng" />
             <TabButton active={activeTab === 'leads'} onClick={() => setActiveTab('leads')} label="Danh sách khách hàng" />
           </div>
         </div>
@@ -271,6 +325,185 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
+              </div>
+            </div>
+          </div>
+        ) : activeTab === 'smart' ? (
+          <div className="space-y-6 sm:y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            {/* Header Area */}
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5">
+              <div>
+                <h2 className="text-xl font-black text-slate-800 tracking-tight uppercase">Thống kê người dùng</h2>
+                <p className="text-sm text-slate-500 font-medium mt-1">Nắm bắt nhu cầu thực tế và điểm mù kiến thức của Chatbot.</p>
+              </div>
+
+              {/* DATE RANGE SELECTOR */}
+              <div className="flex flex-col items-end gap-3">
+                <div className="flex items-center gap-1 bg-slate-50 p-1.5 rounded-2xl border border-slate-200 shrink-0 shadow-inner">
+                  {(['7d', '30d', '90d', 'all', 'custom'] as const).map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => handleRangeChange(r)}
+                      disabled={isLoadingSmart}
+                      className={`px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${selectedRange === r
+                        ? 'bg-white text-blue-600 shadow-sm border border-slate-200/60'
+                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-transparent'
+                        } disabled:opacity-50`}
+                    >
+                      {r === '7d' ? '7 Ngày' : r === '30d' ? '30 Ngày' : r === '90d' ? '90 Ngày' : r === 'all' ? 'Tất cả' : 'Tùy chỉnh'}
+                    </button>
+                  ))}
+                </div>
+
+                {selectedRange === 'custom' && (
+                  <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+                    <input
+                      type="date"
+                      value={customStartDate}
+                      onChange={(e) => setCustomStartDate(e.target.value)}
+                      className="text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500"
+                    />
+                    <span className="text-slate-400 font-bold">-</span>
+                    <input
+                      type="date"
+                      value={customEndDate}
+                      onChange={(e) => setCustomEndDate(e.target.value)}
+                      className="text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500"
+                    />
+                    <button
+                      onClick={handleCustomRangeApply}
+                      disabled={isLoadingSmart || !customStartDate || !customEndDate}
+                      className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold px-4 py-2.5 rounded-lg transition-colors"
+                    >
+                      Áp dụng
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {isLoadingSmart && (
+              <div className="flex items-center justify-center py-6 gap-3 animate-pulse bg-white p-6 rounded-3xl border border-slate-200 shadow-sm shadow-slate-200/50">
+                <div className="w-2.5 h-2.5 rounded-full bg-slate-300 animate-bounce"></div>
+                <div className="w-2.5 h-2.5 rounded-full bg-slate-300 animate-bounce [animation-delay:-0.15s]"></div>
+                <div className="w-2.5 h-2.5 rounded-full bg-slate-300 animate-bounce [animation-delay:-0.3s]"></div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-2">Đang tải dữ liệu...</span>
+              </div>
+            )}
+
+            {/* KPI Cards (Standard Style) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+              <StatCard label="Cụm từ ghi nhận" value={localSmartStats.topTopics.reduce((acc, t) => acc + t.value, 0)} unit="cụm từ hỏi" />
+              <StatCard label="Thiếu kiến thức" value={localSmartStats.knowledgeGaps.length} unit="câu chưa xử lý" />
+              <StatCard label="Giờ tương tác nhiều nhất" value={
+                localSmartStats.peakHours.length > 0
+                  ? localSmartStats.peakHours.reduce((max, p) => p.count > max.count ? p : max, localSmartStats.peakHours[0]).hour + '00'
+                  : '--'
+              } unit="cao điểm" />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+              {/* TOP NEEDS TABLE */}
+              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm shadow-slate-200/50 flex flex-col h-[450px]">
+                <div className="mb-6 flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-4">
+                  <h3>Nhu cầu khách hàng</h3>
+                  <span>{selectedRange === '7d' ? '7 Ngày' : selectedRange === '30d' ? '30 Ngày' : selectedRange === '90d' ? '90 Ngày' : selectedRange === 'all' ? 'Tất cả' : 'Tùy chỉnh'}</span>
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  <table className="w-full text-left text-sm relative">
+                    <thead className="bg-white sticky top-0 z-10 shadow-sm">
+                      <tr>
+                        <th className="pl-6 pr-4 py-3 font-black text-slate-400 uppercase text-[9px] tracking-widest">Truy vấn (Query)</th>
+                        <th className="px-6 py-3 font-black text-slate-400 uppercase text-[9px] tracking-widest text-right">Lượt hỏi</th>
+                        <th className="pr-6 pl-4 py-3 font-black text-slate-400 uppercase text-[9px] tracking-widest text-right w-32">Mức độ</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {localSmartStats.topTopics.length === 0 ? (
+                        <tr><td colSpan={3} className="p-12 text-center text-slate-400 italic">Không có dữ liệu.</td></tr>
+                      ) : localSmartStats.topTopics.map((topic, i) => {
+                        const maxVal = Math.max(...localSmartStats.topTopics.map(t => t.value));
+                        const pct = (topic.value / (maxVal || 1)) * 100;
+                        return (
+                          <tr key={i} className="hover:bg-blue-50/50 transition-colors group">
+                            <td className="pl-6 pr-4 py-3.5 font-bold text-slate-700">{topic.name}</td>
+                            <td className="px-6 py-3.5 font-black text-blue-600 text-right">{topic.value}</td>
+                            <td className="pr-6 pl-4 py-3.5 text-right relative">
+                              <div className="flex items-center justify-end gap-2">
+                                <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                  <div className={`h-full rounded-full ${pct > 80 ? 'bg-rose-500' : pct > 40 ? 'bg-amber-500' : 'bg-blue-500'}`} style={{ width: `${pct}%` }}></div>
+                                </div>
+                                <span className="text-[10px] font-bold text-slate-400 w-7">{Math.ceil(pct)}%</span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* KNOWLEDGE GAPS */}
+              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm shadow-slate-200/50 flex flex-col h-[450px]">
+                <div className="mb-6 flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-4">
+                  <h3>Điểm mù kiến thức cần bổ sung</h3>
+                  <span>{localSmartStats.knowledgeGaps.length} câu</span>
+                </div>
+                <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/30">
+                  {localSmartStats.knowledgeGaps.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-3">
+                      <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-2xl text-slate-300">🎉</div>
+                      <p className="font-medium text-sm">Tuyệt vời! Không phát hiện lỗ hổng lớn nào.</p>
+                    </div>
+                  ) : localSmartStats.knowledgeGaps.map((gap, i) => (
+                    <div key={i} className="flex gap-4 p-4 rounded-2xl bg-white border border-rose-100 hover:border-rose-300 hover:shadow-md transition-all group">
+                      <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-500 border border-rose-100 flex items-center justify-center text-[12px] font-black shrink-0 group-hover:bg-rose-500 group-hover:text-white transition-colors">?</div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-slate-800 leading-snug">"{gap.question}"</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">{new Date(gap.created_at).toLocaleDateString('vi-VN')} • {new Date(gap.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* TRAFFIC ANALYSIS - Full Width */}
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm shadow-slate-200/50">
+              <div className="mb-6 flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                <h3>Lưu lượng tương tác theo giờ</h3>
+                <span>{selectedRange === 'custom' ? `Từ ${new Date(customStartDate || Date.now()).toLocaleDateString('vi-VN')} đến ${new Date(customEndDate || Date.now()).toLocaleDateString('vi-VN')}` : 'Trong ngày khép kín'}</span>
+              </div>
+              <div className="h-[250px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={localSmartStats.peakHours} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorTraffic" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="hour" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 700 }} tickFormatter={(val: any) => `${val}h`} interval="preserveStartEnd" minTickGap={20} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 700 }} />
+                    <Tooltip
+                      cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }}
+                      content={({ active, payload }: any) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-slate-900 border border-slate-800 p-3 shadow-xl rounded-xl">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{payload[0].payload.hour}h00 - {payload[0].payload.hour + 1}h00</p>
+                              <p className="text-sm font-black text-emerald-400">{payload[0].value} lượt tương tác</p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Area type="monotone" dataKey="count" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorTraffic)" activeDot={{ r: 6, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
             </div>
           </div>
@@ -481,8 +714,9 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
               </div>
             )}
           </div>
-        )}
-      </main>
+        )
+        }
+      </main >
 
       {selectedLead && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-300">
@@ -538,9 +772,17 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
           </div>
         </div>
       )}
-    </div>
+    </div >
   );
 }
+
+// --- NEW ICONS ---
+const LightbulbIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A5 5 0 0 0 8 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5" /><path d="M9 18h6" /><path d="M10 22h4" /></svg>
+);
+const ClockIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+);
 
 // --- SUB COMPONENTS ---
 const BarChartIcon = () => (
