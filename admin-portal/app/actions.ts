@@ -486,10 +486,42 @@ export async function getSmartStats(tenantId: number, startDate?: string, endDat
       });
     });
 
-    const topTopics = Object.entries(phraseMap)
+    // D. Tiền xử lý loại bỏ các cụm từ trùng lặp một phần (Subset Cleanup)
+    // Ví dụ: có "tem khuyến mãi" và "tem khuyến", ta sẽ gộp vào "tem khuyến mãi"
+    const phraseEntries = Object.entries(phraseMap);
+
+    // Sắp xếp theo chiều dài chuỗi giảm dần (để xét chuỗi dài trước)
+    phraseEntries.sort((a, b) => b[0].length - a[0].length);
+
+    const finalPhraseMap: Record<string, number> = {};
+    const skipList = new Set<string>();
+
+    for (let i = 0; i < phraseEntries.length; i++) {
+      const [longPhrase, longCount] = phraseEntries[i];
+
+      if (skipList.has(longPhrase)) continue;
+
+      finalPhraseMap[longPhrase] = longCount;
+
+      for (let j = i + 1; j < phraseEntries.length; j++) {
+        const [shortPhrase, shortCount] = phraseEntries[j];
+
+        if (skipList.has(shortPhrase)) continue;
+
+        // Nếu chuỗi dài chứa hoàn toàn chuỗi ngắn (tính theo từ)
+        // Ví dụ: "tem khuyến mãi" chứa "tem khuyến"
+        if (longPhrase.includes(shortPhrase)) {
+          // Cộng dồn điểm cho chuỗi có nghĩa đầy đủ hơn (chuỗi dài)
+          finalPhraseMap[longPhrase] += shortCount;
+          skipList.add(shortPhrase); // Xóa sổ chuỗi bị cắt cụt
+        }
+      }
+    }
+
+    const topTopics = Object.entries(finalPhraseMap)
       .map(([name, value]) => ({ name, value: Math.ceil(value) }))
       .sort((a, b) => b.value - a.value)
-      .filter(item => item.value >= 1)
+      .filter(item => item.value >= 2) // Lọc bỏ các cụm quá ít người hỏi
       .slice(0, 15);
 
     // Cắt danh sách Knowledge Gaps lấy 20 mới nhất
