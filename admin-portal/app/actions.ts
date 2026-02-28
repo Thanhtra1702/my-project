@@ -379,14 +379,15 @@ export async function getSmartStats(tenantId: number, startDate?: string, endDat
       dateFilter = `AND created_at >= CURRENT_DATE - INTERVAL '30 days'`;
     }
 
-    // 1. Phân tích Chủ đề & Truy vấn (Nâng cấp tách cụm từ)
-    const topicsRes = await adminDb.query(`
-      SELECT note, created_at 
+    // 1 & 2. Phân tích Dựa trên Lịch sử Chat Thực Tế (Gọi API Dify)
+    // Giới hạn 30 cuộc hội thoại gần nhất để tránh quá tải Server và Rate limit Dify
+    const recentLeadsRes = await adminDb.query(`
+      SELECT conversation_id, created_at 
       FROM leads 
-      WHERE tenant_id = $1 AND note IS NOT NULL AND note != ''
+      WHERE tenant_id = $1 AND conversation_id IS NOT NULL AND conversation_id != ''
       ${dateFilter}
       ORDER BY created_at DESC 
-      LIMIT 500
+      LIMIT 30
     `, [tenantId]);
 
     const stopWords = [
@@ -396,34 +397,70 @@ export async function getSmartStats(tenantId: number, startDate?: string, endDat
     ];
 
     const phraseMap: Record<string, number> = {};
+    const knowledgeGaps: any[] = [];
 
-    topicsRes.rows.forEach(row => {
-      const cleanNote = row.note.toLowerCase()
-        .replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, " ")
-        .trim();
+    // Gọi API lấy lịch sử đồng loạt
+    const histories = await Promise.all(
+      recentLeadsRes.rows.map(async (lead) => {
+        const history = await getChatHistory(lead.conversation_id, tenantId);
+        return { history, fallbackDate: lead.created_at };
+      })
+    );
 
-      const words = cleanNote.split(/\s+/).filter((w: string) => w.length > 0);
+    histories.forEach(({ history, fallbackDate }) => {
+      if (!Array.isArray(history)) return;
 
-      // A. Đếm nguyên câu (nếu câu ngắn - dưới 5 từ)
-      if (words.length > 0 && words.length <= 5) {
-        phraseMap[cleanNote] = (phraseMap[cleanNote] || 0) + 1;
-      }
+      history.forEach((msg: any) => {
+        if (!msg.query) return;
 
-      // B. Tách Bi-grams (Cụm 2 từ có nghĩa)
-      for (let i = 0; i < words.length - 1; i++) {
-        const w1 = words[i];
-        const w2 = words[i + 1];
+        // A. Xử lý Cụm từ (Keywords) từ câu hỏi user (query)
+        const cleanNote = msg.query.toLowerCase()
+          .replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, " ")
+          .trim();
 
-        if (!stopWords.includes(w1) && !stopWords.includes(w2)) {
-          const bigram = `${w1} ${w2}`;
-          phraseMap[bigram] = (phraseMap[bigram] || 0) + 1;
+        const words = cleanNote.split(/\s+/).filter((w: string) => w.length > 0);
+
+        if (words.length > 0 && words.length <= 5) {
+          phraseMap[cleanNote] = (phraseMap[cleanNote] || 0) + 1;
         }
-      }
 
-      // C. Tách từ đơn (chỉ khi là danh từ/động từ chính, dài > 3 ký tự)
-      words.forEach((w: string) => {
-        if (w.length > 3 && !stopWords.includes(w)) {
-          phraseMap[w] = (phraseMap[w] || 0) + 0.5; // Ưu tiên cụm từ hơn từ đơn
+        for (let i = 0; i < words.length - 1; i++) {
+          const w1 = words[i];
+          const w2 = words[i + 1];
+
+          if (!stopWords.includes(w1) && !stopWords.includes(w2)) {
+            const bigram = `${w1} ${w2}`;
+            phraseMap[bigram] = (phraseMap[bigram] || 0) + 1;
+          }
+        }
+
+        words.forEach((w: string) => {
+          if (w.length > 3 && !stopWords.includes(w)) {
+            phraseMap[w] = (phraseMap[w] || 0) + 0.5;
+          }
+        });
+
+        // B. Xử lý Điểm mù (Knowledge Gaps) từ câu trả lời của Bot (answer)
+        if (msg.answer) {
+          const ans = msg.answer.toLowerCase();
+          if (
+            ans.includes('không tìm thấy') ||
+            ans.includes('không có thông tin') ||
+            ans.includes('thiếu') ||
+            ans.includes('chưa có') ||
+            ans.includes('xin lỗi') ||
+            ans.includes('chưa rõ') ||
+            ans.includes('chưa hiểu rõ') ||
+            ans.includes('mô tả rõ hơn')
+          ) {
+            // Chống trùng lặp câu hỏi
+            if (!knowledgeGaps.find(g => g.question.toLowerCase() === msg.query.toLowerCase())) {
+              knowledgeGaps.push({
+                question: msg.query,
+                created_at: msg.created_at ? new Date(msg.created_at * 1000).toISOString() : fallbackDate
+              });
+            }
+          }
         }
       });
     });
@@ -434,25 +471,9 @@ export async function getSmartStats(tenantId: number, startDate?: string, endDat
       .filter(item => item.value >= 1)
       .slice(0, 15);
 
-    // 2. Phân tích Lỗ hổng Kiến thức
-    const gapsRes = await adminDb.query(`
-      SELECT note as question, created_at 
-      FROM leads 
-      WHERE tenant_id = $1 
-      ${dateFilter}
-      AND (
-        note ILIKE '%không tìm thấy%' OR 
-        note ILIKE '%không có thông tin%' OR 
-        note ILIKE '%thiếu%' OR 
-        note ILIKE '%chưa có%' OR
-        note ILIKE '%xin lỗi%' OR
-        note ILIKE '%chưa rõ%' OR
-        note ILIKE '%chưa hiểu rõ%' OR
-        note ILIKE '%mô tả rõ hơn%'
-      )
-      ORDER BY created_at DESC 
-      LIMIT 20
-    `, [tenantId]);
+    // Cắt danh sách Knowledge Gaps lấy 20 mới nhất
+    knowledgeGaps.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const finalGaps = knowledgeGaps.slice(0, 20);
 
     // 3. Phân tích Giờ cao điểm
     const peakHoursRes = await adminDb.query(`
@@ -473,7 +494,7 @@ export async function getSmartStats(tenantId: number, startDate?: string, endDat
 
     return {
       topTopics,
-      knowledgeGaps: gapsRes.rows,
+      knowledgeGaps: finalGaps,
       peakHours,
       lastUpdated: new Date().toISOString()
     };
