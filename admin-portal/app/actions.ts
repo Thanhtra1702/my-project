@@ -446,7 +446,9 @@ export async function getSmartStats(tenantId: number, startDate?: string, endDat
         note ILIKE '%thiếu%' OR 
         note ILIKE '%chưa có%' OR
         note ILIKE '%xin lỗi%' OR
-        note ILIKE '%chưa rõ%'
+        note ILIKE '%chưa rõ%' OR
+        note ILIKE '%chưa hiểu rõ%' OR
+        note ILIKE '%mô tả rõ hơn%'
       )
       ORDER BY created_at DESC 
       LIMIT 20
