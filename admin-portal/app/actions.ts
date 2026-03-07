@@ -419,45 +419,46 @@ export async function getSmartStats(tenantId: number, startDate?: string, endDat
           .trim();
 
         const words = cleanNote.split(/\s+/).filter((w: string) => w.length > 0);
+        const seenInThisMsg = new Set<string>();
 
-        // Đếm nguyên câu (nếu câu ngắn - dưới 5 từ) 
-        if (words.length > 0 && words.length <= 5) {
-          phraseMap[cleanNote] = (phraseMap[cleanNote] || 0) + 1.5; // Tăng trọng số cho câu hỏi nguyên vẹn
+        // 1. Đếm nguyên câu (nếu câu ngắn - dưới 7 từ)
+        if (words.length > 0 && words.length <= 7) {
+          phraseMap[cleanNote] = (phraseMap[cleanNote] || 0) + 1;
+          seenInThisMsg.add(cleanNote);
         }
 
-        // Tách Trigrams (Cụm 3 từ có nghĩa - Mang lại insight tốt nhất)
+        // 2. Tách Trigrams (Cụm 3 từ) - Chỉ đếm nếu chưa nằm trong câu đã đếm
         for (let i = 0; i < words.length - 2; i++) {
-          const w1 = words[i];
-          const w2 = words[i + 1];
-          const w3 = words[i + 2];
+          const trigram = `${words[i]} ${words[i + 1]} ${words[i + 2]}`;
+          if (Array.from(seenInThisMsg).some(seen => seen.includes(trigram))) continue;
 
-          // Ít nhất 2 trong 3 từ không phải là stop word để cụm 3 từ này có nghĩa
           let validWordsCount = 0;
-          if (!stopWords.includes(w1)) validWordsCount++;
-          if (!stopWords.includes(w2)) validWordsCount++;
-          if (!stopWords.includes(w3)) validWordsCount++;
+          if (!stopWords.includes(words[i])) validWordsCount++;
+          if (!stopWords.includes(words[i + 1])) validWordsCount++;
+          if (!stopWords.includes(words[i + 2])) validWordsCount++;
 
           if (validWordsCount >= 2) {
-            const trigram = `${w1} ${w2} ${w3}`;
-            phraseMap[trigram] = (phraseMap[trigram] || 0) + 1.2;
+            phraseMap[trigram] = (phraseMap[trigram] || 0) + 1;
+            seenInThisMsg.add(trigram);
           }
         }
 
-        // Tách Bi-grams (Cụm 2 từ có nghĩa)
+        // 3. Tách Bi-grams (Cụm 2 từ) - Chỉ đếm nếu chưa nằm trong cụm/câu đã đếm
         for (let i = 0; i < words.length - 1; i++) {
-          const w1 = words[i];
-          const w2 = words[i + 1];
+          const bigram = `${words[i]} ${words[i + 1]}`;
+          if (Array.from(seenInThisMsg).some(seen => seen.includes(bigram))) continue;
 
-          if (!stopWords.includes(w1) && !stopWords.includes(w2)) {
-            const bigram = `${w1} ${w2}`;
+          if (!stopWords.includes(words[i]) && !stopWords.includes(words[i + 1])) {
             phraseMap[bigram] = (phraseMap[bigram] || 0) + 1;
+            seenInThisMsg.add(bigram);
           }
         }
 
-        // Tách từ đơn (chỉ khi là danh từ/động từ chính, dài > 3 ký tự)
+        // 4. Tách từ đơn (Dài > 3 ký tự)
         words.forEach((w: string) => {
-          if (w.length > 3 && !stopWords.includes(w)) {
-            phraseMap[w] = (phraseMap[w] || 0) + 0.5; // Ưu tiên rất thấp cho khối từ đơn
+          if (w.length > 3 && !stopWords.includes(w) && !Array.from(seenInThisMsg).some(seen => seen.includes(w))) {
+            phraseMap[w] = (phraseMap[w] || 0) + 1;
+            seenInThisMsg.add(w);
           }
         });
 
@@ -531,7 +532,7 @@ export async function getSmartStats(tenantId: number, startDate?: string, endDat
     // 3. Phân tích Giờ cao điểm
     const peakHoursRes = await adminDb.query(`
       SELECT 
-        EXTRACT(HOUR FROM created_at) as hour,
+        EXTRACT(HOUR FROM created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh') as hour,
         COUNT(*) as count
       FROM token_logs
       WHERE tenant_id = $1 
