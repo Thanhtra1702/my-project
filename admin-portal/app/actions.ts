@@ -522,7 +522,7 @@ export async function getSmartStats(tenantId: number, startDate?: string, endDat
     const topTopics = Object.entries(finalPhraseMap)
       .map(([name, value]) => ({ name, value: Math.ceil(value) }))
       .sort((a, b) => b.value - a.value)
-      .filter(item => item.value >= 2) // Lọc bỏ các cụm quá ít người hỏi
+      .filter(item => item.value >= 1) // Lọc bỏ các cụm quá ít người hỏi
       .slice(0, 15);
 
     // Cắt danh sách Knowledge Gaps lấy 20 mới nhất
