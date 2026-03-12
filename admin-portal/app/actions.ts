@@ -204,57 +204,6 @@ async function establishSession(user: any, token: string) {
   else redirect('/');
 }
 
-// --- 1.2 FORGOT PASSWORD ---
-export async function forgotPassword(prevState: any, formData: FormData) {
-  const email = formData.get('email') as string;
-
-  try {
-    const result = await adminDb.query(
-      'SELECT * FROM tenants WHERE email = $1',
-      [email]
-    );
-    const user = result.rows[0];
-
-    if (!user) {
-      return { error: 'Email không tồn tại trong hệ thống!' };
-    }
-
-    const host = (await headers()).get('host');
-    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
-    const resetLink = `${protocol}://${host}/reset-password?email=${email}`;
-
-    const sent = await sendResetPasswordEmail(email, resetLink);
-
-    if (sent) {
-      return { success: true, message: 'Liên kết khôi phục mật khẩu đã được gửi đến email của bạn!' };
-    } else {
-      return { error: 'Không thể gửi email lúc này. Vui lòng thử lại sau.' };
-    }
-  } catch (error) {
-    console.error("Forgot Password Error:", error);
-    return { error: 'Lỗi hệ thống khi yêu cầu khôi phục mật khẩu' };
-  }
-}
-
-// --- 1.3 RESET PASSWORD ---
-export async function resetPassword(prevState: any, formData: FormData) {
-  const email = formData.get('email') as string;
-  const newPassword = formData.get('password') as string;
-
-  try {
-    // Trong thực tế, cần kiểm tra token hợp lệ ở đây.
-    // Demo: Cập nhật trực tiếp mật khẩu cho email này.
-    await adminDb.query(
-      'UPDATE tenants SET password_hash = $1 WHERE email = $2',
-      [newPassword, email]
-    );
-
-    return { success: true, message: 'Mật khẩu của bạn đã được cập nhật thành công!' };
-  } catch (error) {
-    console.error("Reset Password Error:", error);
-    return { error: 'Lỗi hệ thống khi đặt lại mật khẩu' };
-  }
-}
 
 // --- 2. LOGOUT ---
 export async function logout() {

@@ -79,9 +79,6 @@ export default function LoginPage() {
                 <input type="checkbox" className="mr-2 rounded border-[#d1d5db] text-[#2563eb] focus:ring-[#2563eb]" />
                 Ghi nhớ đăng nhập
               </label>
-              <Link href="/forgot-password" title="Quên mật khẩu?" className="text-[#2563eb] text-sm hover:underline font-medium">
-                Quên mật khẩu?
-              </Link>
             </div>
 
             <SubmitButton />
