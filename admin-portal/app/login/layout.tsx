@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Đăng nhập quản lý Chatbot AI - Blue.Ai",
-    description: "Trang đăng nhập hệ thống quản lý Chatbot AI - Blue.Ai",
+    title: "Đăng nhập BlueBot - Quản lý Chatbot AI",
+    description: "Đăng nhập hệ thống quản lý dịch vụ Chatbot AI doanh nghiệp - BlueBot",
 };
 
 export default function LoginLayout({
