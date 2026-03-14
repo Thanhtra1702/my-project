@@ -46,11 +46,11 @@ export async function POST(req: Request) {
     if (Array.isArray(items)) {
       finalOrderDetails = items.map((item: any) => {
         if (typeof item === 'object') {
-          // Trích xuất thông tin món ăn từ object (hỗ trợ cả Việt/Anh)
-          const name = item.ten_san_pham || item.product_name || item.name || "Sản phẩm";
-          const qty = item.so_luong || item.quantity || item.qty || 1;
-          const price = item.don_gia || item.unit_price || item.price || 0;
-          const itemTotal = item.thanh_tien || item.item_total || (Number(qty) * Number(price)) || 0;
+          // Trích xuất thông tin món ăn từ object (hỗ trợ cả Việt/Anh và cấu trúc cụ thể của người dùng)
+          const name = item.product_name || item.ten_san_pham || item.name || "Sản phẩm";
+          const qty = item.quantity || item.so_luong || item.qty || 1;
+          const price = item.unit_price || item.don_gia || item.price || 0;
+          const itemTotal = item.item_total || item.thanh_tien || (Number(qty) * Number(price)) || 0;
 
           calculatedTotal += Number(itemTotal);
           
