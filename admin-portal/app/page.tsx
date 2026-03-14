@@ -2,7 +2,7 @@ import { adminDb } from '@/lib/db';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Dashboard from './Dashboard';
-import { getSmartStats } from './actions';
+import { getSmartStats, getOrders } from './actions';
 
 export const revalidate = 0; // Luôn lấy dữ liệu mới nhất, không dùng cache
 
@@ -74,9 +74,13 @@ export default async function Home() {
   // FETCH SMART STATS
   const smartStats = await getSmartStats(Number(tenantId));
 
+  // FETCH ORDERS (NEW)
+  const orders = await getOrders(Number(tenantId));
+
   return (
     <Dashboard
       leads={leadsRes.rows}
+      orders={orders}
       tenantId={tenantId}
       companyName={user.company_name}
       email={user.email}

@@ -512,3 +512,29 @@ export async function getSmartStats(tenantId: number, startDate?: string, endDat
     };
   }
 }
+
+// --- 6. ORDERS (NEW) ---
+export async function getOrders(tenantId: number) {
+  try {
+    const res = await adminDb.query(`
+      SELECT * FROM orders 
+      WHERE tenant_id = $1 
+      ORDER BY created_at DESC
+    `, [tenantId]);
+    return res.rows;
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    return [];
+  }
+}
+
+export async function toggleOrderProcessed(orderId: number, currentStatus: boolean) {
+  try {
+    await adminDb.query('UPDATE orders SET is_processed = $1 WHERE id = $2', [!currentStatus, orderId]);
+    revalidatePath('/');
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating order status:", error);
+    return { success: false };
+  }
+}

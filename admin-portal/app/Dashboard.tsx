@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useTransition, useEffect } from 'react';
 // SỬA DÒNG NÀY: Dùng ./actions thay vì @/lib/actions để trỏ đúng file cùng thư mục app
-import { getChatHistory, logout, toggleBotStatus, getSmartStats } from './actions';
+import { getChatHistory, logout, toggleBotStatus, getSmartStats, toggleOrderProcessed } from './actions';
 import { useRouter } from 'next/navigation';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -20,6 +20,9 @@ const ChevronLeftIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16
 const ChevronRightIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>);
 const ChevronFirstIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="11 17 6 12 11 7"></polyline><polyline points="18 17 13 12 18 7"></polyline></svg>);
 const ChevronLastIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg>);
+const ShoppingBagIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>);
+const CheckCircleIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>);
+const AlertCircleIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>);
 
 // --- INTERFACES (Giữ nguyên) ---
 interface Lead {
@@ -32,8 +35,21 @@ interface Lead {
   total_chat_tokens: number;
 }
 
+interface Order {
+  id: number;
+  customer_name: string;
+  phone_number: string;
+  address: string;
+  order_details: string;
+  total_amount: number;
+  is_processed: boolean;
+  created_at: string;
+  conversation_id: string;
+}
+
 interface DashboardProps {
   leads: Lead[];
+  orders: Order[];
   tenantId: string;
   companyName: string;
   email: string;
@@ -64,9 +80,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-export default function Dashboard({ leads, tenantId, companyName, email, stats, chartData, isSystemLocked, initialBotStatus, tokenLimit, smartStats }: DashboardProps) {
+export default function Dashboard({ leads, orders: initialOrders, tenantId, companyName, email, stats, chartData, isSystemLocked, initialBotStatus, tokenLimit, smartStats }: DashboardProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'smart'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'smart' | 'orders'>('overview');
+  const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [loadingChat, setLoadingChat] = useState(false);
@@ -108,6 +125,17 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
     startTransition(async () => {
       await toggleBotStatus(newStatus);
     });
+  };
+
+  const handleToggleOrderProcessed = async (orderId: number, currentStatus: boolean) => {
+    // Update local state first for instant feedback
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, is_processed: !currentStatus } : o));
+
+    const result = await toggleOrderProcessed(orderId, currentStatus);
+    if (!result.success) {
+      // Revert if failed
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, is_processed: currentStatus } : o));
+    }
   };
 
   const handleViewChat = async (lead: Lead) => {
@@ -186,11 +214,30 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
     return result;
   }, [leads, searchTerm, sortOrder]);
 
-  const totalPages = Math.ceil(filteredLeads.length / itemsPerPage);
-  const paginatedLeads = useMemo(() => {
+  const filteredOrders = useMemo(() => {
+    let result = orders.filter(o =>
+      o.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      o.phone_number?.includes(searchTerm) ||
+      o.order_details?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    result.sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    });
+
+    return result;
+  }, [orders, searchTerm, sortOrder]);
+
+  const displayedData = activeTab === 'leads' ? filteredLeads : filteredOrders;
+  const totalItems = activeTab === 'leads' ? filteredLeads.length : filteredOrders.length;
+
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const paginatedData = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredLeads.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredLeads, currentPage, itemsPerPage]);
+    return displayedData.slice(startIndex, startIndex + itemsPerPage);
+  }, [displayedData, currentPage, itemsPerPage]);
 
   const handleSearchChange = (val: string) => {
     setSearchTerm(val);
@@ -254,6 +301,7 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
           <div className="flex overflow-x-auto scrollbar-hide gap-6 sm:gap-8 mt-1 border-t border-slate-50/50">
             <TabButton active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} label="Tổng quan" />
             <TabButton active={activeTab === 'smart'} onClick={() => setActiveTab('smart')} label="Thống kê người dùng" />
+            <TabButton active={activeTab === 'orders'} onClick={() => setActiveTab('orders')} label="Đơn hàng" />
             <TabButton active={activeTab === 'leads'} onClick={() => setActiveTab('leads')} label="Danh sách khách hàng" />
           </div>
         </div>
@@ -282,6 +330,7 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
                 <p className="text-[10px] font-bold mt-3 uppercase tracking-tighter text-blue-100">Hiệu suất dùng: {usagePercent.toFixed(1)}%</p>
               </div>
 
+              <StatCard label="Tổng đơn hàng" value={orders.length} unit="Đơn hàng" />
               <StatCard label="Tổng khách hàng" value={leads.length} unit="Khách hàng" />
             </div>
 
@@ -511,8 +560,8 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
           <div className="space-y-6 animate-in fade-in duration-300">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5">
               <div>
-                <h2 className="text-xl font-black text-slate-800 tracking-tight">Tất cả khách hàng (Leads)</h2>
-                <p className="text-sm text-slate-500 font-medium">Theo dõi thông tin và lịch sử hội thoại AI của bạn.</p>
+                <h2 className="text-xl font-black text-slate-800 tracking-tight">{activeTab === 'leads' ? 'Tất cả khách hàng (Leads)' : 'Danh sách đơn hàng'}</h2>
+                <p className="text-sm text-slate-500 font-medium">{activeTab === 'leads' ? 'Theo dõi thông tin và lịch sử hội thoại AI của bạn.' : 'Quản lý và cập nhật trạng thái các đơn hàng được chốt từ Chatbot.'}</p>
               </div>
               <button
                 onClick={handleRefresh}
@@ -527,7 +576,7 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-stretch lg:items-center">
               <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><SearchIcon /></div>
-                <input type="text" placeholder="Tìm kiếm tên, số điện thoại..." className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all text-sm font-medium text-slate-700" onChange={(e) => handleSearchChange(e.target.value)} />
+                <input type="text" placeholder={activeTab === 'leads' ? "Tìm kiếm tên, số điện thoại..." : "Tìm kiếm tên, SĐT, chi tiết đơn..."} className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all text-sm font-medium text-slate-700" onChange={(e) => handleSearchChange(e.target.value)} />
               </div>
               <div className="relative min-w-[200px]">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400"><SortIcon /></div>
@@ -558,87 +607,197 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
                 </div>
               </div>
               <div className="h-6 w-px bg-slate-200 hidden md:block mx-1"></div>
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap text-center lg:text-left">Kết quả: <span className="text-blue-600 font-black">{filteredLeads.length}</span></div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap text-center lg:text-left">Kết quả: <span className="text-blue-600 font-black">{totalItems}</span></div>
             </div>
 
             {/* Desktop View Table */}
             <div className="hidden md:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50/80 border-b border-slate-100">
-                  <tr>
-                    <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Khách hàng</th>
-                    <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Liên hệ</th>
-                    <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Ghi chú</th>
-                    <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Token Chat</th>
-                    <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Thời gian</th>
-                    <th className="px-6 py-4 text-right"></th>
-                  </tr>
+                  {activeTab === 'leads' ? (
+                    <tr>
+                      <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Khách hàng</th>
+                      <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Liên hệ</th>
+                      <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Ghi chú</th>
+                      <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Token Chat</th>
+                      <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Thời gian</th>
+                      <th className="px-6 py-4 text-right"></th>
+                    </tr>
+                  ) : (
+                    <tr>
+                      <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Khách hàng / Đơn hàng</th>
+                      <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Chi tiết đơn hàng</th>
+                      <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Tổng tiền</th>
+                      <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Thời gian</th>
+                      <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Trạng thái xử lý</th>
+                      <th className="px-6 py-4 text-right"></th>
+                    </tr>
+                  )}
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-[13px]">
-                  {paginatedLeads.length === 0 ? (
-                    <tr><td colSpan={6} className="p-12 text-center text-slate-400 italic font-medium">Bạn chưa có khách hàng nào.</td></tr>
-                  ) : paginatedLeads.map((lead) => (
-                    <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-sm"><UserIcon /></div>
-                          <div><p className="font-bold text-slate-800 leading-none">{lead.customer_name}</p><p className="text-[10px] text-slate-400 font-mono mt-1">ID: #{lead.id}</p></div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 font-bold text-blue-600 font-mono text-[11px]">{lead.phone_number}</td>
-                      <td className="px-6 py-4 text-slate-500 max-w-xs truncate font-medium">{lead.note || "---"}</td>
-                      <td className="px-6 py-4"><span className="inline-flex items-center px-2.5 py-1 rounded text-[11px] font-black bg-blue-50 text-blue-700 border border-blue-100 leading-none">{Number(lead.total_chat_tokens).toLocaleString()}</span></td>
-                      <td className="px-6 py-4 text-slate-400 text-[11px] font-bold">{new Date(lead.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
-                      <td className="px-6 py-4 text-right">
-                        <button onClick={() => handleViewChat(lead)} className="bg-slate-100 hover:bg-blue-600 text-slate-600 hover:text-white font-black p-2 px-4 rounded-lg transition-all text-[11px] uppercase tracking-wider">Xem Chat</button>
-                      </td>
-                    </tr>
-                  ))}
+                  {paginatedData.length === 0 ? (
+                    <tr><td colSpan={6} className="p-12 text-center text-slate-400 italic font-medium">Bạn chưa có {activeTab === 'leads' ? 'khách hàng' : 'đơn hàng'} nào.</td></tr>
+                  ) : activeTab === 'leads' ? (
+                    (paginatedData as Lead[]).map((lead) => (
+                      <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors group">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-sm"><UserIcon /></div>
+                            <div><p className="font-bold text-slate-800 leading-none">{lead.customer_name}</p><p className="text-[10px] text-slate-400 font-mono mt-1">ID: #{lead.id}</p></div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 font-bold text-blue-600 font-mono text-[11px]">{lead.phone_number}</td>
+                        <td className="px-6 py-4 text-slate-500 max-w-xs truncate font-medium">{lead.note || "---"}</td>
+                        <td className="px-6 py-4"><span className="inline-flex items-center px-2.5 py-1 rounded text-[11px] font-black bg-blue-50 text-blue-700 border border-blue-100 leading-none">{Number(lead.total_chat_tokens).toLocaleString()}</span></td>
+                        <td className="px-6 py-4 text-slate-400 text-[11px] font-bold">{new Date(lead.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
+                        <td className="px-6 py-4 text-right">
+                          <button onClick={() => handleViewChat(lead)} className="bg-slate-100 hover:bg-blue-600 text-slate-600 hover:text-white font-black p-2 px-4 rounded-lg transition-all text-[11px] uppercase tracking-wider">Xem Chat</button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    (paginatedData as Order[]).map((order) => (
+                      <tr key={order.id} className="hover:bg-slate-50/50 transition-colors group">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-sm"><ShoppingBagIcon /></div>
+                            <div>
+                              <p className="font-bold text-slate-800 leading-none">{order.customer_name}</p>
+                              <p className="text-[10px] text-blue-600 font-bold mt-1 uppercase tracking-tighter">{order.phone_number}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-slate-500 max-w-xs truncate font-medium">{order.order_details || "---"}</td>
+                        <td className="px-6 py-4 font-black text-slate-800">{Number(order.total_amount).toLocaleString()} đ</td>
+                        <td className="px-6 py-4 text-slate-400 text-[11px] font-bold">{new Date(order.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => handleToggleOrderProcessed(order.id, order.is_processed)}
+                              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-all focus:outline-none ${order.is_processed ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                            >
+                              <span className={`${order.is_processed ? 'translate-x-[1.1rem]' : 'translate-x-[0.1rem]'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 shadow-md`} />
+                            </button>
+                            <span className={`text-[10px] font-black uppercase tracking-widest ${order.is_processed ? 'text-emerald-600' : 'text-slate-400'}`}>
+                              {order.is_processed ? 'Đã xử lý' : 'Chưa xử lý'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button onClick={() => {
+                            // Reuse handleViewChat if conversation_id exists
+                            if (order.conversation_id) handleViewChat({ ...order, customer_name: order.customer_name, phone_number: order.phone_number, note: order.order_details, total_chat_tokens: 0 } as any);
+                          }} disabled={!order.conversation_id} className={`p-2 rounded-lg transition-all text-xs font-bold uppercase tracking-wider ${order.conversation_id ? 'bg-slate-100 hover:bg-blue-600 text-slate-600 hover:text-white' : 'text-slate-200 cursor-not-allowed'}`}>Xem Context</button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
 
             {/* Mobile View Cards */}
             <div className="md:hidden space-y-4">
-              {paginatedLeads.length === 0 ? (
-                <div className="bg-white p-12 text-center text-slate-400 italic font-medium rounded-3xl border border-dashed border-slate-200">Bạn chưa có khách hàng nào.</div>
-              ) : paginatedLeads.map((lead) => (
-                <div key={lead.id} className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100"><UserIcon /></div>
-                      <div>
-                        <p className="font-black text-slate-800 leading-tight">{lead.customer_name}</p>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">ID: #{lead.id}</p>
+              {paginatedData.length === 0 ? (
+                <div className="bg-white p-12 text-center text-slate-400 italic font-medium rounded-3xl border border-dashed border-slate-200">Bạn chưa có {activeTab === 'leads' ? 'khách hàng' : 'đơn hàng'} nào.</div>
+              ) : activeTab === 'leads' ? (
+                (paginatedData as Lead[]).map((lead) => (
+                  <div key={lead.id} className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100"><UserIcon /></div>
+                        <div>
+                          <p className="font-black text-slate-800 leading-tight">{lead.customer_name}</p>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">ID: #{lead.id}</p>
+                        </div>
+                      </div>
+                      <div className="bg-blue-50 text-blue-600 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-tight border border-blue-100 shrink-0">
+                        {Number(lead.total_chat_tokens).toLocaleString()} Tokens
                       </div>
                     </div>
-                    <div className="bg-blue-50 text-blue-600 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-tight border border-blue-100 shrink-0">
-                      {Number(lead.total_chat_tokens).toLocaleString()} Tokens
-                    </div>
-                  </div>
 
-                  <div className="space-y-3 pt-2">
-                    <div className="flex justify-between items-center text-sm font-bold">
-                      <span className="text-slate-400 text-[10px] uppercase tracking-widest">SĐT</span>
-                      <span className="text-blue-600 font-mono tracking-tighter">{lead.phone_number}</span>
-                    </div>
-                    {lead.note && (
-                      <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Yêu cầu/Ghi chú</span>
-                        <p className="text-xs text-slate-600 font-medium leading-relaxed italic">"{lead.note}"</p>
+                    <div className="space-y-3 pt-2">
+                      <div className="flex justify-between items-center text-sm font-bold">
+                        <span className="text-slate-400 text-[10px] uppercase tracking-widest">SĐT</span>
+                        <span className="text-blue-600 font-mono tracking-tighter">{lead.phone_number}</span>
                       </div>
-                    )}
-                    <div className="flex justify-between items-center text-[10px] text-slate-400 font-bold uppercase tracking-widest border-t border-slate-50 pt-3 mt-1">
-                      <span>{new Date(lead.created_at).toLocaleDateString('vi-VN')}</span>
-                      <span>{new Date(lead.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
+                      {lead.note && (
+                        <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Yêu cầu/Ghi chú</span>
+                          <p className="text-xs text-slate-600 font-medium leading-relaxed italic">"{lead.note}"</p>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center text-[10px] text-slate-400 font-bold uppercase tracking-widest border-t border-slate-50 pt-3 mt-1">
+                        <span>{new Date(lead.created_at).toLocaleDateString('vi-VN')}</span>
+                        <span>{new Date(lead.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      <button onClick={() => handleViewChat(lead)} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-2xl shadow-xl shadow-blue-600/20 text-xs transition-all tracking-widest uppercase">Xem lịch sử Chat</button>
                     </div>
-                    <button onClick={() => handleViewChat(lead)} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-2xl shadow-xl shadow-blue-600/20 text-xs transition-all tracking-widest uppercase">Xem lịch sử Chat</button>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                (paginatedData as Order[]).map((order) => (
+                  <div key={order.id} className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100"><ShoppingBagIcon /></div>
+                        <div>
+                          <p className="font-black text-slate-800 leading-tight">{order.customer_name}</p>
+                          <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest mt-0.5">Đơn hàng #{order.id}</p>
+                        </div>
+                      </div>
+                      <div className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${order.is_processed ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
+                        {order.is_processed ? 'Hoàn thành' : 'Mới'}
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 pt-2">
+                      <div className="grid grid-cols-2 gap-3 text-[11px]">
+                        <div>
+                          <span className="text-slate-400 font-bold uppercase tracking-tighter block mb-1">SĐT</span>
+                          <span className="text-slate-800 font-bold">{order.phone_number}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-slate-400 font-bold uppercase tracking-tighter block mb-1">Tổng tiền</span>
+                          <span className="text-blue-600 font-black">{Number(order.total_amount).toLocaleString()} đ</span>
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Chi tiết sản phẩm</span>
+                        <p className="text-xs text-slate-700 font-medium leading-relaxed">{order.order_details}</p>
+                        {order.address && (
+                          <p className="text-[10px] text-slate-400 font-medium mt-2 border-t border-slate-200 pt-2 flex items-start gap-1.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                            {order.address}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between bg-slate-100/50 p-3 rounded-2xl">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Trạng thái xử lý</span>
+                        <button
+                          onClick={() => handleToggleOrderProcessed(order.id, order.is_processed)}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${order.is_processed ? 'bg-emerald-600 text-white' : 'bg-white text-slate-500 border border-slate-200 shadow-sm'}`}
+                        >
+                          {order.is_processed ? <CheckCircleIcon /> : <AlertCircleIcon />}
+                          {order.is_processed ? 'Đã xử lý' : 'Xử lý ngay'}
+                        </button>
+                      </div>
+
+                      <div className="flex justify-between items-center text-[10px] text-slate-400 font-bold uppercase tracking-widest border-t border-slate-50 pt-3">
+                        <span>{new Date(order.created_at).toLocaleDateString('vi-VN')}</span>
+                        {order.conversation_id && (
+                          <button onClick={() => handleViewChat({ ...order, customer_name: order.customer_name, phone_number: order.phone_number, note: order.order_details, total_chat_tokens: 0 } as any)} className="text-blue-600 hover:text-blue-700 underline font-black">Xem ngữ cảnh Chat</button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
 
-            {totalPages >= 1 && filteredLeads.length > 0 && (
+            {totalPages >= 1 && totalItems > 0 && (
               <div className="flex items-center justify-center gap-2 py-8">
                 <div className="flex items-center gap-1 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
                   {/* First Page */}
@@ -716,7 +875,7 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
           </div>
         )
         }
-      </main >
+      </main>
 
       {selectedLead && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-300">
@@ -772,7 +931,7 @@ export default function Dashboard({ leads, tenantId, companyName, email, stats, 
           </div>
         </div>
       )}
-    </div >
+    </div>
   );
 }
 
