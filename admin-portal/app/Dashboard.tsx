@@ -625,18 +625,19 @@ export default function Dashboard({ leads, orders: initialOrders, tenantId, comp
                     </tr>
                   ) : (
                     <tr>
-                      <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Khách hàng / Đơn hàng</th>
-                      <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Chi tiết đơn hàng</th>
+                      <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Khách hàng / SĐT</th>
+                      <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Địa chỉ giao</th>
+                      <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Chi tiết đơn</th>
                       <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Tổng tiền</th>
                       <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Thời gian</th>
-                      <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Trạng thái xử lý</th>
+                      <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Trạng thái</th>
                       <th className="px-6 py-4 text-right"></th>
                     </tr>
                   )}
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-[13px]">
                   {paginatedData.length === 0 ? (
-                    <tr><td colSpan={6} className="p-12 text-center text-slate-400 italic font-medium">Bạn chưa có {activeTab === 'leads' ? 'khách hàng' : 'đơn hàng'} nào.</td></tr>
+                    <tr><td colSpan={activeTab === 'leads' ? 6 : 7} className="p-12 text-center text-slate-400 italic font-medium">Bạn chưa có {activeTab === 'leads' ? 'khách hàng' : 'đơn hàng'} nào.</td></tr>
                   ) : activeTab === 'leads' ? (
                     (paginatedData as Lead[]).map((lead) => (
                       <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors group">
@@ -667,9 +668,10 @@ export default function Dashboard({ leads, orders: initialOrders, tenantId, comp
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-slate-500 max-w-xs truncate font-medium">{order.order_details || "---"}</td>
-                        <td className="px-6 py-4 font-black text-slate-800">{Number(order.total_amount).toLocaleString()} đ</td>
-                        <td className="px-6 py-4 text-slate-400 text-[11px] font-bold">{new Date(order.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
+                        <td className="px-6 py-4 text-slate-500 text-xs font-semibold max-w-[150px] truncate" title={order.address}>{order.address || "---"}</td>
+                        <td className="px-6 py-4 text-slate-500 text-xs font-medium max-w-[200px] truncate" title={order.order_details}>{order.order_details || "---"}</td>
+                        <td className="px-6 py-4 font-black text-slate-800 whitespace-nowrap">{Number(order.total_amount).toLocaleString()} đ</td>
+                        <td className="px-6 py-4 text-slate-400 text-[11px] font-bold">{new Date(order.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}</td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <button
@@ -679,15 +681,14 @@ export default function Dashboard({ leads, orders: initialOrders, tenantId, comp
                               <span className={`${order.is_processed ? 'translate-x-[1.1rem]' : 'translate-x-[0.1rem]'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 shadow-md`} />
                             </button>
                             <span className={`text-[10px] font-black uppercase tracking-widest ${order.is_processed ? 'text-emerald-600' : 'text-slate-400'}`}>
-                              {order.is_processed ? 'Đã xử lý' : 'Chưa xử lý'}
+                              {order.is_processed ? 'Xong' : 'Mới'}
                             </span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <button onClick={() => {
-                            // Reuse handleViewChat if conversation_id exists
                             if (order.conversation_id) handleViewChat({ ...order, customer_name: order.customer_name, phone_number: order.phone_number, note: order.order_details, total_chat_tokens: 0 } as any);
-                          }} disabled={!order.conversation_id} className={`p-2 rounded-lg transition-all text-xs font-bold uppercase tracking-wider ${order.conversation_id ? 'bg-slate-100 hover:bg-blue-600 text-slate-600 hover:text-white' : 'text-slate-200 cursor-not-allowed'}`}>Xem Context</button>
+                          }} disabled={!order.conversation_id} className={`p-2 px-3 rounded-lg transition-all text-[10px] font-black uppercase tracking-wider ${order.conversation_id ? 'bg-slate-100 hover:bg-blue-600 text-slate-600 hover:text-white' : 'text-slate-200 cursor-not-allowed'}`}>Xem Context</button>
                         </td>
                       </tr>
                     ))

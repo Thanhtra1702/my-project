@@ -22,6 +22,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Thiếu tenant_id' }, { status: 400 });
     }
 
+    // Kiểm tra xem đơn này có bị trùng lặp không (trong vòng 10 giây qua)
+    if (conversation_id) {
+      const existingOrder = await adminDb.query(
+        "SELECT id FROM orders WHERE conversation_id = $1 AND created_at > NOW() - INTERVAL '10 seconds' LIMIT 1",
+        [conversation_id]
+      );
+      if (existingOrder.rows.length > 0) {
+        return NextResponse.json({ status: 'ignored', message: 'Duplicate order within 10s' });
+      }
+    }
+
     // Giá trị cuối cùng để lưu
     const finalCustomerName = customer_name || ten_nguoi_nhan || 'Khách vãng lai';
     const finalPhoneNumber = phone_number || sdt || '';
@@ -46,7 +57,7 @@ export async function POST(req: Request) {
           return `${qty}x ${name} (${Number(price).toLocaleString()}đ)`;
         }
         return String(item);
-      }).join("\n"); // Sử dụng xuống dòng để hiển thị đẹp hơn trong Dashboard
+      }).join(", "); // Sử dụng dấu phẩy để hiển thị tốt hơn trong bảng
     }
 
     // Ưu tiên lấy tổng tiền gửi trực tiếp từ Dify, nếu không có thì dùng tiền đã tính từ danh sách sản phẩm
