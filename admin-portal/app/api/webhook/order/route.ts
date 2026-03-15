@@ -9,7 +9,6 @@ export async function POST(req: Request) {
     const {
       conversation_id,
       tenant_id,
-      // Ánh xạ linh hoạt các trường tiếng Việt & tiếng Anh
       customer_name, ten_nguoi_nhan,
       phone_number, sdt,
       address, dia_chi,
@@ -17,25 +16,11 @@ export async function POST(req: Request) {
       total_amount, tong_tien, tong_tien_don_hang
     } = body;
 
-    // console.log("📥 Nhận Webhook Đơn hàng:", { conversation_id, tenant_id });
-
     if (!tenant_id) {
       return NextResponse.json({ error: 'Thiếu tenant_id' }, { status: 400 });
     }
 
-    // Kiểm tra xem đơn này có bị trùng lặp không (trong vòng 10 giây qua)
-    if (conversation_id) {
-      const existingOrder = await adminDb.query(
-        "SELECT id FROM orders WHERE conversation_id = $1 AND created_at > NOW() - INTERVAL '10 seconds' LIMIT 1",
-        [conversation_id]
-      );
-      if (existingOrder.rows.length > 0) {
-        console.log("⚠️ Bỏ qua đơn hàng trùng trong 10s:", conversation_id);
-        return NextResponse.json({ status: 'ignored', message: 'Duplicate order within 10s' });
-      }
-    }
-
-    // Giá trị cuối cùng để lưu
+    // 0. Chuẩn bị dữ liệu
     const finalCustomerName = customer_name || ten_nguoi_nhan || 'Khách vãng lai';
     const finalPhoneNumber = phone_number || sdt || '';
     const finalAddress = address || dia_chi || '';
@@ -43,32 +28,62 @@ export async function POST(req: Request) {
     let finalOrderDetails = "";
     let calculatedTotal = 0;
 
-    // Xử lý danh sách sản phẩm (Array of Objects)
     const items = products || danh_sach_san_pham;
     if (Array.isArray(items)) {
       finalOrderDetails = items.map((item: any) => {
         if (typeof item === 'object') {
-          // Trích xuất thông tin món ăn từ object (hỗ trợ cả Việt/Anh và cấu trúc cụ thể của người dùng)
           const name = item.product_name || item.ten_san_pham || item.name || "Sản phẩm";
           const qty = item.quantity || item.so_luong || item.qty || 1;
           const price = item.unit_price || item.don_gia || item.price || 0;
           const itemTotal = item.thanh_tien || item.item_total || (Number(qty) * Number(price)) || 0;
-
           calculatedTotal += Number(itemTotal);
-          
           return `${qty}x ${name} (${Number(price).toLocaleString()}đ)`;
         }
         return String(item);
-      }).join(", "); // Sử dụng dấu phẩy để hiển thị tốt hơn trong bảng
+      }).join(", ");
     } else if (items) {
-      // Nếu Dify gửi dạng chuỗi văn bản thay vì mảng
       finalOrderDetails = String(items);
     }
 
-    // Ưu tiên lấy tổng tiền gửi trực tiếp từ Dify, nếu không có thì dùng tiền đã tính từ danh sách sản phẩm
     const finalTotal = Number(tong_tien_don_hang || tong_tien || total_amount || calculatedTotal || 0);
 
-    // Lưu vào database
+    // 1. Kiểm tra đơn hàng rác (Không có tiền và không có chi tiết món)
+    if (finalTotal === 0 && !finalOrderDetails) {
+      console.log("⚠️ Bỏ qua đơn hàng rác (không có thông tin món ăn hoặc tiền)");
+      return NextResponse.json({ status: 'ignored', message: 'Empty order' });
+    }
+
+    // 2. Cơ chế Cập nhật (Upsert): Nếu đã có đơn hàng từ cuộc hội thoại này, ta cập nhật thay vì tạo mới
+    if (conversation_id) {
+      const existingOrder = await adminDb.query(
+        "SELECT id FROM orders WHERE conversation_id = $1 ORDER BY created_at DESC LIMIT 1",
+        [conversation_id]
+      );
+
+      if (existingOrder.rows.length > 0) {
+        const orderId = existingOrder.rows[0].id;
+        console.log(`🔄 Cập nhật đơn hàng cũ (ID: ${orderId}) cho conversation: ${conversation_id}`);
+        
+        await adminDb.query(
+          `UPDATE orders SET 
+            customer_name = $1, 
+            phone_number = $2, 
+            address = $3, 
+            order_details = $4, 
+            total_amount = $5,
+            created_at = NOW()
+          WHERE id = $6`,
+          [finalCustomerName, finalPhoneNumber, finalAddress, finalOrderDetails, finalTotal, orderId]
+        );
+
+        return NextResponse.json({
+          status: 'updated',
+          order_id: orderId
+        });
+      }
+    }
+
+    // 3. Nếu chưa có thì mới Insert mới
     const res = await adminDb.query(
       `INSERT INTO orders (
           tenant_id, 
