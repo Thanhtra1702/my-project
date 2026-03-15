@@ -4,6 +4,7 @@ import { adminDb } from '@/lib/db';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    console.log("📥 NHẬN WEBHOOK ĐƠN HÀNG - FULL BODY:", JSON.stringify(body, null, 2));
 
     const {
       conversation_id,
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
       total_amount, tong_tien, tong_tien_don_hang
     } = body;
 
-    console.log("📥 Nhận Webhook Đơn hàng:", { conversation_id, tenant_id });
+    // console.log("📥 Nhận Webhook Đơn hàng:", { conversation_id, tenant_id });
 
     if (!tenant_id) {
       return NextResponse.json({ error: 'Thiếu tenant_id' }, { status: 400 });
@@ -29,6 +30,7 @@ export async function POST(req: Request) {
         [conversation_id]
       );
       if (existingOrder.rows.length > 0) {
+        console.log("⚠️ Bỏ qua đơn hàng trùng trong 10s:", conversation_id);
         return NextResponse.json({ status: 'ignored', message: 'Duplicate order within 10s' });
       }
     }
@@ -50,7 +52,7 @@ export async function POST(req: Request) {
           const name = item.product_name || item.ten_san_pham || item.name || "Sản phẩm";
           const qty = item.quantity || item.so_luong || item.qty || 1;
           const price = item.unit_price || item.don_gia || item.price || 0;
-          const itemTotal = item.item_total || item.thanh_tien || (Number(qty) * Number(price)) || 0;
+          const itemTotal = item.thanh_tien || item.item_total || (Number(qty) * Number(price)) || 0;
 
           calculatedTotal += Number(itemTotal);
           
@@ -58,6 +60,9 @@ export async function POST(req: Request) {
         }
         return String(item);
       }).join(", "); // Sử dụng dấu phẩy để hiển thị tốt hơn trong bảng
+    } else if (items) {
+      // Nếu Dify gửi dạng chuỗi văn bản thay vì mảng
+      finalOrderDetails = String(items);
     }
 
     // Ưu tiên lấy tổng tiền gửi trực tiếp từ Dify, nếu không có thì dùng tiền đã tính từ danh sách sản phẩm
