@@ -20,9 +20,11 @@ const ChevronLeftIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16
 const ChevronRightIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>);
 const ChevronFirstIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="11 17 6 12 11 7"></polyline><polyline points="18 17 13 12 18 7"></polyline></svg>);
 const ChevronLastIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg>);
-const ShoppingBagIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>);
+const ShoppingBagIcon = ({ className }: { className?: string }) => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>);
 const CheckCircleIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>);
 const AlertCircleIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>);
+const XMarkIcon = ({ className }: { className?: string }) => (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className={className || "w-6 h-6"}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>);
+const MapPinIcon = ({ className }: { className?: string }) => (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className={className || "w-6 h-6"}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>);
 
 // --- INTERFACES (Giữ nguyên) ---
 interface Lead {
@@ -85,6 +87,7 @@ export default function Dashboard({ leads, orders: initialOrders, tenantId, comp
   const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'smart' | 'orders'>('overview');
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null); // New state for order details
   const [messages, setMessages] = useState<any[]>([]);
   const [loadingChat, setLoadingChat] = useState(false);
 
@@ -668,8 +671,8 @@ export default function Dashboard({ leads, orders: initialOrders, tenantId, comp
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-slate-500 text-xs font-semibold max-w-[150px] truncate" title={order.address}>{order.address || "---"}</td>
-                        <td className="px-6 py-4 text-slate-500 text-xs font-medium max-w-[200px] truncate" title={order.order_details}>{order.order_details || "---"}</td>
+                        <td className="px-6 py-4 text-slate-500 text-xs font-semibold max-w-[180px] break-words" title={order.address}>{order.address || "---"}</td>
+                        <td className="px-6 py-4 text-slate-500 text-xs font-medium max-w-[220px] break-words" title={order.order_details}>{order.order_details || "---"}</td>
                         <td className="px-6 py-4 font-black text-slate-800 whitespace-nowrap">{Number(order.total_amount).toLocaleString()} đ</td>
                         <td className="px-6 py-4 text-slate-400 text-[11px] font-bold">{new Date(order.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}</td>
                         <td className="px-6 py-4">
@@ -686,9 +689,12 @@ export default function Dashboard({ leads, orders: initialOrders, tenantId, comp
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <button onClick={() => {
-                            if (order.conversation_id) handleViewChat({ ...order, customer_name: order.customer_name, phone_number: order.phone_number, note: order.order_details, total_chat_tokens: 0 } as any);
-                          }} disabled={!order.conversation_id} className={`p-2 px-3 rounded-lg transition-all text-[10px] font-black uppercase tracking-wider ${order.conversation_id ? 'bg-slate-100 hover:bg-blue-600 text-slate-600 hover:text-white' : 'text-slate-200 cursor-not-allowed'}`}>Xem Context</button>
+                          <div className="flex items-center justify-end gap-2">
+                             <button onClick={() => setSelectedOrder(order)} className="p-2 px-3 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 font-black text-[10px] uppercase tracking-wider transition-all">Chi tiết</button>
+                             <button onClick={() => {
+                               if (order.conversation_id) handleViewChat({ ...order, customer_name: order.customer_name, phone_number: order.phone_number, note: order.order_details, total_chat_tokens: 0 } as any);
+                             }} disabled={!order.conversation_id} className={`p-2 px-3 rounded-lg transition-all text-[10px] font-black uppercase tracking-wider ${order.conversation_id ? 'bg-slate-100 hover:bg-blue-600 text-slate-600 hover:text-white' : 'text-slate-200 cursor-not-allowed'}`}>Context</button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -878,7 +884,100 @@ export default function Dashboard({ leads, orders: initialOrders, tenantId, comp
         }
       </main>
 
-      {selectedLead && (
+      {/* Order Details Modal */}
+      {selectedOrder && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-8 pb-4 flex justify-between items-start">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-sm transition-transform hover:scale-105">
+                  <ShoppingBagIcon />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-800 tracking-tight leading-none">{selectedOrder.customer_name}</h3>
+                  <p className="text-xs text-blue-600 font-bold uppercase tracking-widest mt-2">Đơn hàng #{selectedOrder.id}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSelectedOrder(null)}
+                className="p-3 bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-2xl transition-all border border-slate-100"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+              {/* Thông tin liên hệ */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-50/50 p-4 rounded-3xl border border-slate-100">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Số điện thoại</span>
+                  <p className="text-sm font-black text-slate-700 font-mono tracking-tighter">{selectedOrder.phone_number}</p>
+                </div>
+                <div className="bg-slate-50/50 p-4 rounded-3xl border border-slate-100">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Ngày đặt</span>
+                  <p className="text-sm font-black text-slate-700">{new Date(selectedOrder.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+              </div>
+
+              {/* Địa chỉ */}
+              <div className="bg-slate-50/50 p-5 rounded-3xl border border-slate-100">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 flex items-center gap-2">
+                  <MapPinIcon className="w-3 h-3" /> Địa chỉ giao hàng
+                </span>
+                <p className="text-sm font-bold text-slate-700 leading-relaxed break-words">{selectedOrder.address || "Chưa cung cấp địa chỉ"}</p>
+              </div>
+
+              {/* Chi tiết đơn hàng */}
+              <div className="bg-blue-50/30 p-5 rounded-3xl border border-blue-100">
+                <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest block mb-3 flex items-center gap-2">
+                  <ShoppingBagIcon className="w-3 h-3" /> Chi tiết sản phẩm
+                </span>
+                <div className="space-y-2">
+                  {selectedOrder.order_details?.split(', ').map((item, idx) => (
+                    <div key={idx} className="flex justify-between items-start text-sm border-b border-blue-50 pb-2 last:border-0 last:pb-0">
+                       <span className="font-bold text-slate-700 pr-4">{item}</span>
+                    </div>
+                  )) || "---"}
+                </div>
+                <div className="mt-4 pt-4 border-t border-blue-100 flex justify-between items-center">
+                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Tổng tiền</span>
+                  <span className="text-lg font-black text-blue-600">{Number(selectedOrder.total_amount).toLocaleString()} đ</span>
+                </div>
+              </div>
+
+              {/* Trạng thái */}
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-3xl border border-slate-100">
+                <div>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Trạng thái xử lý</span>
+                  <span className={`text-[11px] font-black uppercase tracking-wider ${selectedOrder.is_processed ? 'text-emerald-600' : 'text-amber-600'}`}>
+                    {selectedOrder.is_processed ? 'Đã hoàn thành' : 'Đơn mới (Đang chờ)'}
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    handleToggleOrderProcessed(selectedOrder.id, selectedOrder.is_processed);
+                    setSelectedOrder(prev => prev ? {...prev, is_processed: !prev.is_processed} : null);
+                  }}
+                  className={`relative inline-flex h-8 w-14 items-center rounded-full transition-all focus:outline-none ${selectedOrder.is_processed ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                >
+                  <span className={`${selectedOrder.is_processed ? 'translate-x-7' : 'translate-x-1'} inline-block h-6 w-6 transform rounded-full bg-white transition-transform duration-300 shadow-md`} />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-8 pt-4">
+              <button 
+                onClick={() => setSelectedOrder(null)}
+                className="w-full bg-slate-800 hover:bg-slate-900 text-white font-black py-4 rounded-2xl shadow-xl shadow-slate-200 text-xs transition-all tracking-widest uppercase active:scale-[0.98]"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {messages.length > 0 && selectedLead && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-2xl h-[92vh] sm:h-[85vh] flex flex-col shadow-2xl animate-in slide-in-from-bottom-5 sm:zoom-in-95 duration-300 overflow-hidden ring-1 ring-black/5">
             <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">
