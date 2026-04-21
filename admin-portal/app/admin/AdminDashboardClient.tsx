@@ -287,11 +287,37 @@ export default function AdminDashboardClient({ tenants, leads, orders: initialOr
                   </section>
 
                   <section className="col-span-2">
-                    <h4 className="text-[11px] font-bold text-slate-400 uppercase mb-4 tracking-normal">Nội dung đơn hàng</h4>
-                    <div className="p-5 border border-slate-200 rounded-sm bg-white min-h-[100px]">
-                      <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap font-medium">
-                        {selectedOrder.order_details}
-                      </p>
+                    <h4 className="text-[11px] font-bold text-slate-400 uppercase mb-4 tracking-normal">Danh mục hàng hóa</h4>
+                    <div className="border border-slate-200 rounded-sm overflow-hidden bg-white">
+                      <div className="bg-slate-50/50 px-5 py-2.5 border-b border-slate-200 grid grid-cols-12 gap-4">
+                        <span className="col-span-2 text-[9px] font-bold text-slate-400 uppercase tracking-tight">Số lượng</span>
+                        <span className="col-span-10 text-[9px] font-bold text-slate-400 uppercase tracking-tight">Chi tiết mặt hàng & Đơn giá</span>
+                      </div>
+                      <div className="divide-y divide-slate-100">
+                        {selectedOrder.order_details?.split('\n').filter((l: string) => l.trim()).map((line: string, idx: number) => {
+                          const parts = line.split('x ');
+                          const qty = parts.length > 1 ? parts[0] + 'x' : '';
+                          const content = parts.length > 1 ? parts.slice(1).join('x ') : line;
+                          
+                          return (
+                            <div key={idx} className="px-5 py-4 grid grid-cols-12 gap-4 items-center group hover:bg-slate-50/50 transition-colors">
+                              <div className="col-span-2">
+                                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded bg-blue-50 text-[#007BFF] text-[11px] font-bold border border-blue-100">
+                                  {qty || '1x'}
+                                </span>
+                              </div>
+                              <div className="col-span-10 text-sm text-slate-700 font-semibold leading-relaxed">
+                                {content}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {(!selectedOrder.order_details || selectedOrder.order_details.trim() === "") && (
+                          <div className="p-8 text-center text-slate-400 text-xs italic font-medium">
+                            Chưa có thông tin sản phẩm cụ thể.
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </section>
                 </div>

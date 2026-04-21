@@ -41,7 +41,7 @@ export async function POST(req: Request) {
           return `${qty}x ${name} (${Number(price).toLocaleString()}đ)`;
         }
         return String(item);
-      }).join(", ");
+      }).join("\n");
     } else if (items) {
       finalOrderDetails = String(items);
     }

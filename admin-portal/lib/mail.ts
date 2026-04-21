@@ -196,10 +196,28 @@ export async function sendOrderEmail(toEmail: string, orderData: any) {
                 <p style="margin: 5px 0;"><strong>Địa chỉ:</strong> ${address}</p>
               </div>
 
-              <div class="section-title">Chi tiết mặt hàng</div>
-              <div class="order-content">
-                ${order_details}
-              </div>
+              <div class="section-title">Danh mục hàng hóa</div>
+              <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                <thead>
+                  <tr style="background-color: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                    <th style="text-align: left; padding: 12px; font-size: 10px; color: #94a3b8; text-transform: uppercase; width: 60px;">SL</th>
+                    <th style="text-align: left; padding: 12px; font-size: 10px; color: #94a3b8; text-transform: uppercase;">Mặt hàng & Đơn giá</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${order_details?.split('\n').filter((l: any) => l.trim()).map((line: any) => {
+                    const parts = line.split('x ');
+                    const qty = parts.length > 1 ? parts[0] + 'x' : '1x';
+                    const content = parts.length > 1 ? parts.slice(1).join('x ') : line;
+                    return `
+                      <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 15px 12px; font-size: 13px; font-weight: bold; color: #007BFF;">${qty}</td>
+                        <td style="padding: 15px 12px; font-size: 13px; color: #334155; font-weight: 500;">${content}</td>
+                      </tr>
+                    `;
+                  }).join('') || '<tr><td colspan="2" style="padding: 20px; text-align: center; color: #94a3b8; font-style: italic;">Chưa có dữ liệu sản phẩm</td></tr>'}
+                </tbody>
+              </table>
 
               <div class="financials">
                 <div class="total-label">TỔNG THANH TOÁN (COD)</div>
