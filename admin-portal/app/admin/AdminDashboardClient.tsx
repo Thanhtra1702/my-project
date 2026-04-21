@@ -232,6 +232,33 @@ export default function AdminDashboardClient({ tenants, leads, orders: initialOr
                   <button onClick={() => activeTab === 'tenants' ? (setSelectedTenant(item), setShowModal(true)) : activeTab === 'leads' ? handleViewChat(item) : setSelectedOrder(item)} className="w-full py-3 bg-[#007BFF] text-white text-[10px] font-bold uppercase tracking-widest rounded-sm">CHỌN XEM</button>
                 </div>
               ))}
+              {/* PAGINATION CONTROLS */}
+              <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 border border-slate-200 rounded-sm">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  Hiển thị <span className="text-slate-700">{paginatedData.length}</span> / {displayedData.length} kết quả
+                </p>
+                <div className="flex items-center gap-2">
+                  <button 
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-sm text-[10px] font-bold uppercase tracking-widest text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    Trước
+                  </button>
+                  <div className="flex items-center gap-1.5 px-4 font-bold text-[11px] text-slate-800">
+                    <span className="text-[#007BFF]">{currentPage}</span>
+                    <span className="text-slate-300">/</span>
+                    <span>{Math.ceil(displayedData.length / itemsPerPage) || 1}</span>
+                  </div>
+                  <button 
+                    disabled={currentPage >= Math.ceil(displayedData.length / itemsPerPage)}
+                    onClick={() => setCurrentPage(prev => Math.min(Math.ceil(displayedData.length / itemsPerPage), prev + 1))}
+                    className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-sm text-[10px] font-bold uppercase tracking-widest text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    Sau
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

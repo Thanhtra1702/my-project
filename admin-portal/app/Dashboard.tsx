@@ -210,7 +210,6 @@ export default function Dashboard({ leads, orders: initialOrders, tenantId, comp
                                 className={`p-1.5 rounded-sm transition-all ${o.is_processed ? 'text-slate-300 hover:text-amber-500' : 'text-emerald-500 hover:bg-emerald-50'}`}
                                 title={o.is_processed ? "Đánh dấu là mới" : "Đánh dấu là xong"}
                               >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                               </button>
                             </div>
                           </td>
@@ -220,7 +219,59 @@ export default function Dashboard({ leads, orders: initialOrders, tenantId, comp
                   </tbody>
                 </table>
               </div>
-              <div className="md:hidden space-y-3">{paginatedData.map((item: any) => (<div key={item.id} className="bg-white p-4 border border-slate-200 rounded-sm shadow-sm"><div className="flex justify-between items-start mb-3"><div><p className="font-bold text-slate-800">{activeTab === 'leads' ? `Khách hàng #${item.id.toString().padStart(2, '0')}` : item.customer_name}</p><p className="text-[10px] font-bold text-slate-400 mt-0.5">{new Date(item.created_at).toLocaleDateString('vi-VN')}</p></div>{activeTab === 'orders' && (<span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-sm ${item.is_processed ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white'}`}>{item.is_processed ? 'XONG' : 'MỚI'}</span>)}</div><button onClick={() => activeTab === 'leads' ? handleViewChat(item) : setSelectedOrder(item)} className="w-full py-3 bg-[#007BFF] text-white text-[10px] font-bold uppercase tracking-widest rounded-sm">{activeTab === 'leads' ? 'XEM HỘI THOẠI' : 'CHI TIẾT ĐƠN'}</button></div>))}</div>
+
+              {/* MOBILE LAYOUT */}
+              <div className="md:hidden space-y-3">
+                {paginatedData.map((item: any) => (
+                  <div key={item.id} className="bg-white p-4 border border-slate-200 rounded-sm shadow-sm">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <p className="font-bold text-slate-800">{activeTab === 'leads' ? `Khách hàng #${item.id.toString().padStart(2, '0')}` : item.customer_name}</p>
+                        <p className="text-[10px] font-bold text-slate-400 mt-0.5">{new Date(item.created_at).toLocaleDateString('vi-VN')}</p>
+                      </div>
+                      {activeTab === 'orders' && (
+                        <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-sm ${item.is_processed ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white'}`}>
+                          {item.is_processed ? 'XONG' : 'MỚI'}
+                        </span>
+                      )}
+                    </div>
+                    <button 
+                      onClick={() => activeTab === 'leads' ? handleViewChat(item) : setSelectedOrder(item)} 
+                      className="w-full py-3 bg-[#007BFF] text-white text-[10px] font-bold uppercase tracking-widest rounded-sm"
+                    >
+                      {activeTab === 'leads' ? 'XEM HỘI THOẠI' : 'CHI TIẾT ĐƠN'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* PAGINATION CONTROLS */}
+              <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 border border-slate-200 rounded-sm">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  Hiển thị <span className="text-slate-700">{paginatedData.length}</span> / {displayedData.length} kết quả
+                </p>
+                <div className="flex items-center gap-2">
+                  <button 
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-sm text-[10px] font-bold uppercase tracking-widest text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    Trước
+                  </button>
+                  <div className="flex items-center gap-1.5 px-4 font-bold text-[11px] text-slate-800">
+                    <span className="text-[#007BFF]">{currentPage}</span>
+                    <span className="text-slate-300">/</span>
+                    <span>{Math.ceil(displayedData.length / itemsPerPage) || 1}</span>
+                  </div>
+                  <button 
+                    disabled={currentPage >= Math.ceil(displayedData.length / itemsPerPage)}
+                    onClick={() => setCurrentPage(prev => Math.min(Math.ceil(displayedData.length / itemsPerPage), prev + 1))}
+                    className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-sm text-[10px] font-bold uppercase tracking-widest text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    Sau
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
