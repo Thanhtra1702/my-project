@@ -87,7 +87,7 @@ export default function Dashboard({ leads, orders: initialOrders, tenantId, comp
         <div className="p-6 border-b border-slate-100">
           <img src="/logo.png" alt="Logo" className="h-8 w-auto object-contain mb-4" />
           <h1 className="text-sm font-bold text-slate-800 leading-none truncate">{companyName || 'BlueAI'}</h1>
-          <p className="text-[10px] font-bold text-slate-400 mt-1.5 uppercase tracking-widest truncate">{email || `ID: #${tenantId}`}</p>
+          <p className="text-[10px] font-bold text-slate-400 mt-1.5 tracking-widest truncate">{email || `ID: #${tenantId}`}</p>
         </div>
         <nav className="flex-1 p-4 space-y-1">
           <TabVerticalButton active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} label="Tổng quan" icon={<HomeIcon />} />

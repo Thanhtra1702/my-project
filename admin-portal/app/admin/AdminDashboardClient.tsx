@@ -77,7 +77,7 @@ export default function AdminDashboardClient({ tenants, leads, orders: initialOr
         <div className="p-6 border-b border-slate-100">
           <img src="/logo.png" alt="Logo" className="h-8 w-auto object-contain mb-4" />
           <h1 className="text-sm font-bold text-slate-800 leading-none truncate">BlueAI Admin Central</h1>
-          <p className="text-[10px] font-bold text-slate-400 mt-1.5 uppercase tracking-widest truncate">Admin: <span className="text-[#007BFF] font-bold">{username}</span></p>
+          <p className="text-[10px] font-bold text-slate-400 mt-1.5 tracking-widest truncate">Admin: <span className="text-[#007BFF] font-bold">{username}</span></p>
         </div>
         <nav className="flex-1 p-4 space-y-1">
           <TabVerticalButton active={activeTab === 'tenants'} onClick={() => setActiveTab('tenants')} label="Danh sách đối tác" icon={<HomeIcon />} />
