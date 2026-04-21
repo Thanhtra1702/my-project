@@ -87,7 +87,6 @@ export default async function Home() {
       stats={statsRes.rows[0]}
       chartData={chartRes.rows}
       isSystemLocked={!user.is_active}
-      initialBotStatus={user.is_bot_enabled}
       tokenLimit={user.token_limit || 100000}
       smartStats={smartStats}
     />

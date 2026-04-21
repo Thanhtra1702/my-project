@@ -25,7 +25,7 @@ export async function login(prevState: any, formData: FormData) {
     const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 giây timeout
 
     try {
-      ssoRes = await fetch('https://bluesso.bluedata.vn/api/Auth/authenticate', {
+      ssoRes = await fetch('https://bluesso.bluedata.vn/Auth/authenticate', {
         method: 'POST',
         headers: {
           'accept': '*/*',
@@ -213,17 +213,6 @@ export async function logout() {
   redirect('/login');
 }
 
-// --- 3. TOGGLE BOT STATUS ---
-export async function toggleBotStatus(currentStatus: boolean) {
-  const cookieStore = await cookies();
-  const tenantId = cookieStore.get('tenant_id')?.value;
-  if (!tenantId) return { success: false };
-  try {
-    await adminDb.query('UPDATE tenants SET is_bot_enabled = $1 WHERE id = $2', [!currentStatus, tenantId]);
-    revalidatePath('/');
-    return { success: true, newStatus: !currentStatus };
-  } catch (error) { return { success: false }; }
-}
 
 // --- 4. GET CHAT HISTORY (QUAN TRỌNG) ---
 export async function getChatHistory(conversation_id: string, tenant_id: number) {

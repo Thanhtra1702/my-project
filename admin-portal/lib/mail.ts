@@ -151,14 +151,88 @@ export async function sendLeadEmail(toEmail: string, leadData: any) {
   }
 }
 
+export async function sendOrderEmail(toEmail: string, orderData: any) {
+  const { id, customer_name, phone_number, address, order_details, total_amount } = orderData;
+  const systemEmail = process.env.SMTP_USER;
+
+  const subject = `[Đơn Hàng Mới] Mã vận đơn: #${id} - ${customer_name}`;
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"Cổng vận đơn BlueAI" <${systemEmail}>`,
+      to: toEmail,
+      subject: subject,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f8f9fa; }
+            .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+            .header { background-color: #0F172A; color: #ffffff; padding: 30px; text-align: center; }
+            .header h1 { margin: 0; font-size: 20px; text-transform: uppercase; letter-spacing: 2px; }
+            .header p { margin: 10px 0 0; opacity: 0.7; font-size: 12px; }
+            .body { padding: 40px; color: #334155; }
+            .section-title { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; border-bottom: 1px solid #f1f5f9; padding-bottom: 5px; }
+            .customer-info { margin-bottom: 30px; }
+            .order-content { background-color: #f8fafc; padding: 20px; border-radius: 6px; border-left: 4px solid #007BFF; margin-bottom: 30px; font-family: monospace; font-size: 14px; color: #1e293b; }
+            .financials { background-color: #f1f5f9; padding: 20px; border-radius: 6px; text-align: right; }
+            .total-label { font-size: 12px; font-weight: bold; color: #64748b; }
+            .total-value { font-size: 24px; font-weight: 900; color: #0f172a; margin-top: 5px; }
+            .footer { background-color: #f1f5f9; padding: 20px; text-align: center; font-size: 11px; color: #94a3b8; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Đơn hàng mới nhận: #${id}</h1>
+              <p>Hệ thống tự động ghi nhận hội thoại BlueAI</p>
+            </div>
+            <div class="body">
+              <div class="customer-info">
+                <div class="section-title">Thông tin giao nhận</div>
+                <p style="margin: 5px 0;"><strong>Khách hàng:</strong> ${customer_name}</p>
+                <p style="margin: 5px 0;"><strong>Điện thoại:</strong> ${phone_number}</p>
+                <p style="margin: 5px 0;"><strong>Địa chỉ:</strong> ${address}</p>
+              </div>
+
+              <div class="section-title">Chi tiết mặt hàng</div>
+              <div class="order-content">
+                ${order_details}
+              </div>
+
+              <div class="financials">
+                <div class="total-label">TỔNG THANH TOÁN (COD)</div>
+                <div class="total-value">${Number(total_amount).toLocaleString()} VNĐ</div>
+              </div>
+
+              <p style="margin-top: 40px; font-size: 13px; color: #64748b; text-align: center;">
+                Vui lòng truy cập Dashboard để cập nhật trạng thái vận đơn sớm nhất.
+              </p>
+            </div>
+            <div class="footer">
+              Đây là thông báo tự động từ hệ thống quản trị BlueAI. Không cần trả lời email này.
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+    console.log("✅ Order Email sent:", info.messageId);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
 export async function sendResetPasswordEmail(toEmail: string, resetLink: string) {
   const systemEmail = process.env.SMTP_USER;
 
   try {
     const info = await transporter.sendMail({
-      from: `"Hệ thống BlueData" <${systemEmail}>`,
+      from: `"Hệ thống BlueAI" <${systemEmail}>`,
       to: toEmail,
-      subject: "[BlueData] Yêu cầu đặt lại mật khẩu",
+      subject: "[BlueAI] Yêu cầu đặt lại mật khẩu",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px;">
           <h2 style="color: #2563eb; text-align: center;">Đặt lại mật khẩu</h2>
@@ -169,7 +243,7 @@ export async function sendResetPasswordEmail(toEmail: string, resetLink: string)
           </div>
           <p>Nếu bạn không gửi yêu cầu này, vui lòng bỏ qua email này. Liên kết sẽ hết hạn sau một thời gian ngắn.</p>
           <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-          <p style="font-size: 12px; color: #6b7280; text-align: center;">© 2024 BlueData. Tất cả quyền được bảo lưu.</p>
+          <p style="font-size: 12px; color: #6b7280; text-align: center;">© 2024 BlueAI. Tất cả quyền được bảo lưu.</p>
         </div>
       `,
     });

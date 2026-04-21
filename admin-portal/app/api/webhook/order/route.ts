@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/db';
+import { sendOrderEmail } from '@/lib/mail';
 
 export async function POST(req: Request) {
   try {
@@ -106,9 +107,27 @@ export async function POST(req: Request) {
       ]
     );
 
+    // 4. Gửi Email thông báo cho Merchant (Lấy email tenant)
+    const tenantRes = await adminDb.query('SELECT email FROM tenants WHERE id = $1', [tenant_id]);
+    const orderId = res.rows[0].id;
+
+    if (tenantRes.rows.length > 0 && tenantRes.rows[0].email) {
+      console.log(`📧 Đang gửi thông báo đơn hàng #${orderId} tới: ${tenantRes.rows[0].email}`);
+      
+      // Gửi email bất đồng bộ, không đợi kết quả để tránh làm chậm Webhook
+      sendOrderEmail(tenantRes.rows[0].email, {
+        id: orderId,
+        customer_name: finalCustomerName,
+        phone_number: finalPhoneNumber,
+        address: finalAddress,
+        order_details: finalOrderDetails,
+        total_amount: finalTotal
+      }).catch(e => console.error("⚠️ Lỗi gửi mail đơn hàng:", e));
+    }
+
     return NextResponse.json({
       status: 'success',
-      order_id: res.rows[0].id
+      order_id: orderId
     });
 
   } catch (error: any) {

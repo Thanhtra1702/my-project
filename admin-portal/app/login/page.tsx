@@ -14,7 +14,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className={`w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-medium py-3 rounded-lg transition-colors cursor-pointer text-base mt-2 flex justify-center items-center gap-2 ${pending ? 'opacity-70 cursor-not-allowed' : ''}`}
+      className={`w-full bg-[#007BFF] hover:bg-[#0066CC] text-white font-medium py-3 rounded-lg transition-colors cursor-pointer text-base mt-2 flex justify-center items-center gap-2 ${pending ? 'opacity-70 cursor-not-allowed' : ''}`}
     >
       {pending && <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>}
       {pending ? 'Đang đăng nhập...' : 'Đăng nhập'}
@@ -38,7 +38,7 @@ export default function LoginPage() {
       {/* MAIN */}
       <main className="flex-1 flex flex-col items-center p-4 pt-[4vh] sm:pt-[5vh]">
         <div className="bg-white rounded-2xl shadow-[0_0.5rem_1rem_rgba(0,0,0,0.15)] p-6 sm:p-12 w-full max-w-[448px] box-border">
-          <h2 className="text-[#2563eb] text-[30px] font-bold text-center mb-2">Đăng nhập hệ thống</h2>
+          <h2 className="text-[#007BFF] text-[30px] font-bold text-center mb-2">Đăng nhập hệ thống</h2>
           <p className="text-[#6b7280] text-center mb-4">Sử dụng tài khoản BlueData của bạn</p>
 
           <form action={formAction} className="flex flex-col">
@@ -57,7 +57,7 @@ export default function LoginPage() {
                 type="text"
                 placeholder="Nhập tài khoản của bạn"
                 required
-                className="w-full px-3 py-[9px] border border-[#d1d5db] rounded-lg text-sm outline-none focus:border-[#2563eb] mt-2 box-border"
+                className="w-full px-3 py-[9px] border border-[#d1d5db] rounded-lg text-sm outline-none focus:border-[#007BFF] mt-2 box-border"
               />
             </div>
 
@@ -70,16 +70,16 @@ export default function LoginPage() {
                 type="password"
                 placeholder="Nhập mật khẩu"
                 required
-                className="w-full px-3 py-[9px] border border-[#d1d5db] rounded-lg text-sm outline-none focus:border-[#2563eb] box-border mt-2"
+                className="w-full px-3 py-[9px] border border-[#d1d5db] rounded-lg text-sm outline-none focus:border-[#007BFF] box-border mt-2"
               />
             </div>
 
             <div className="flex justify-between items-center mb-6 mt-2">
               <label className="flex items-center text-sm text-[#374151] cursor-pointer">
-                <input type="checkbox" className="mr-2 rounded border-[#d1d5db] text-[#2563eb] focus:ring-[#2563eb]" />
+                <input type="checkbox" className="mr-2 rounded border-[#d1d5db] text-[#007BFF] focus:ring-[#2563eb]" />
                 Ghi nhớ đăng nhập
               </label>
-              <Link href="/forgot-password" title="Quên mật khẩu?" className="text-[#2563eb] text-sm hover:underline font-medium">
+              <Link href="/forgot-password" title="Quên mật khẩu?" className="text-[#007BFF] text-sm hover:underline font-medium">
                 Quên mật khẩu?
               </Link>
             </div>

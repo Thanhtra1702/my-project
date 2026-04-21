@@ -3,529 +3,369 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import TenantModal from './tenants/TenantModal';
+import { getChatHistory, logout, toggleOrderProcessed } from '../actions';
 
+// --- ICONS ---
 const SearchIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>);
-const SortIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>);
 const UserIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>);
-const RefreshIcon = ({ spin }: { spin: boolean }) => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-700 ${spin ? 'animate-spin' : ''}`}><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>);
 const CloseIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>);
-const ChevronLeftIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>);
-const ChevronRightIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>);
-const ChevronFirstIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="11 17 6 12 11 7"></polyline><polyline points="18 17 13 12 18 7"></polyline></svg>);
-const ChevronLastIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg>);
+const LogOutIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>);
+const HomeIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>);
+const UsersIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>);
+const ShoppingBagIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>);
+const RefreshIcon = ({ spin }: { spin: boolean }) => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-700 ${spin ? 'animate-spin' : ''}`}><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>);
+const XMarkIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>);
 
-import { getChatHistory } from '../actions';
+export default function AdminDashboardClient({ tenants, leads, orders: initialOrders, stats, username }: { tenants: any[], leads: any[], orders: any[], stats: any, username: string }) {
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<'tenants' | 'leads' | 'orders'>('tenants');
+  const [orders, setOrders] = useState<any[]>(initialOrders);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [tenantFilter, setTenantFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedTenant, setSelectedTenant] = useState<any>(null);
+  const [selectedLead, setSelectedLead] = useState<any | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [loadingChat, setLoadingChat] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-export default function AdminDashboardClient({ tenants, leads, stats }: { tenants: any[], leads: any[], stats: any }) {
-    const router = useRouter();
-    const [activeTab, setActiveTab] = useState<'tenants' | 'leads'>('tenants');
+  const handleRefresh = () => { setIsRefreshing(true); router.refresh(); setTimeout(() => setIsRefreshing(false), 1000); };
+  const handleToggleOrderProcessed = async (orderId: number, currentStatus: boolean) => { setOrders(prev => prev.map(o => o.id === orderId ? { ...o, is_processed: !currentStatus } : o)); await toggleOrderProcessed(orderId, currentStatus); };
+  const handleViewChat = async (lead: any) => {
+    setSelectedLead(lead); setLoadingChat(true); setMessages([]);
+    const history = await getChatHistory(lead.conversation_id, lead.tenant_id);
+    setMessages(Array.isArray(history) ? history : []); setLoadingChat(false);
+  };
 
-    // States Lọc & Sắp xếp (Chung)
-    const [searchTerm, setSearchTerm] = useState('');
-    const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
-    const [tenantFilter, setTenantFilter] = useState<string>('all');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(50);
+  const filteredTenants = useMemo(() => {
+    let res = tenants.filter(t => t.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) || t.username?.toLowerCase().includes(searchTerm.toLowerCase()));
+    res.sort((a, b) => sortOrder === 'desc' ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime() : new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    return res;
+  }, [tenants, searchTerm, sortOrder]);
 
-    // Cuộn lên đầu trang khi chuyển trang
-    useEffect(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, [currentPage]);
+  const filteredLeads = useMemo(() => {
+    let res = leads.filter(l => {
+      const matchesSearch = l.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) || l.phone_number?.includes(searchTerm) || l.tenant_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesTenant = tenantFilter === 'all' || l.tenant_id.toString() === tenantFilter;
+      return matchesSearch && matchesTenant;
+    });
+    res.sort((a, b) => sortOrder === 'desc' ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime() : new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    return res;
+  }, [leads, searchTerm, sortOrder, tenantFilter]);
 
-    // States Tenant
-    const [showModal, setShowModal] = useState(false);
-    const [selectedTenant, setSelectedTenant] = useState<any>(null);
+  const filteredOrders = useMemo(() => {
+    let res = orders.filter(o => {
+      const matchesSearch = o.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) || o.phone_number?.includes(searchTerm) || o.tenant_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesTenant = tenantFilter === 'all' || o.tenant_id.toString() === tenantFilter;
+      return matchesSearch && matchesTenant;
+    });
+    res.sort((a, b) => sortOrder === 'desc' ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime() : new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    return res;
+  }, [orders, searchTerm, sortOrder, tenantFilter]);
 
-    // States Lead/Chat
-    const [selectedLead, setSelectedLead] = useState<any | null>(null);
-    const [messages, setMessages] = useState<any[]>([]);
-    const [loadingChat, setLoadingChat] = useState(false);
+  const displayedData = activeTab === 'tenants' ? filteredTenants : activeTab === 'leads' ? filteredLeads : filteredOrders;
+  const paginatedData = displayedData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-    const [isRefreshing, setIsRefreshing] = useState(false);
+  return (
+    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-900">
+      {/* SIDEBAR */}
+      <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col sticky top-0 h-screen z-20">
+        <div className="p-6 border-b border-slate-100">
+          <img src="/logo.png" alt="Logo" className="h-8 w-auto object-contain mb-4" />
+          <h1 className="text-sm font-bold text-slate-800 leading-none truncate">BlueAI Admin Central</h1>
+          <p className="text-[10px] font-bold text-slate-400 mt-1.5 uppercase tracking-widest truncate">Admin: <span className="text-[#007BFF] font-bold">{username}</span></p>
+        </div>
+        <nav className="flex-1 p-4 space-y-1">
+          <TabVerticalButton active={activeTab === 'tenants'} onClick={() => setActiveTab('tenants')} label="Danh sách đối tác" icon={<HomeIcon />} />
+          <TabVerticalButton active={activeTab === 'leads'} onClick={() => setActiveTab('leads')} label="Cuộc trò chuyện" icon={<UsersIcon />} />
+          <TabVerticalButton active={activeTab === 'orders'} onClick={() => setActiveTab('orders')} label="Quản trị Đơn hàng" icon={<ShoppingBagIcon />} />
+        </nav>
+        <div className="p-4 border-t border-slate-100 space-y-3">
+          <button onClick={() => logout()} className="flex items-center gap-2 w-full px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-sm transition-all"><LogOutIcon /> Thoát</button>
+        </div>
+      </aside>
 
-    const handleRefresh = () => {
-        setIsRefreshing(true);
-        router.refresh();
-        setTimeout(() => setIsRefreshing(false), 1000);
-    };
+      <main className="flex-1 flex flex-col min-w-0">
+        {/* MOBILE HEADER */}
+        <div className="md:hidden bg-white border-b border-slate-200 sticky top-0 z-30">
+          <div className="flex justify-between items-center p-4">
+            <img src="/logo.png" alt="Logo" className="h-6 w-auto" />
+            <button onClick={() => logout()} className="p-2 text-slate-400"><LogOutIcon /></button>
+          </div>
+          <div className="flex overflow-x-auto scrollbar-hide border-t border-slate-50">
+            <TabButton active={activeTab === 'tenants'} onClick={() => setActiveTab('tenants')} label="Đối tác" />
+            <TabButton active={activeTab === 'leads'} onClick={() => setActiveTab('leads')} label="Trò chuyện" />
+            <TabButton active={activeTab === 'orders'} onClick={() => setActiveTab('orders')} label="Đơn hàng" />
+          </div>
+        </div>
 
-    const handleViewChat = async (lead: any) => {
-        setSelectedLead(lead);
-        setLoadingChat(true);
-        setMessages([]);
-        const history = await getChatHistory(lead.conversation_id, lead.tenant_id);
-        setMessages(history);
-        setLoadingChat(false);
-    };
-
-    const handleTabChange = (tab: 'tenants' | 'leads') => {
-        setActiveTab(tab);
-        setSearchTerm('');
-        setTenantFilter('all');
-        setCurrentPage(1);
-    };
-
-    const handleItemsPerPageChange = (val: number) => {
-        setItemsPerPage(val);
-        setCurrentPage(1);
-    };
-
-    const filteredTenants = useMemo(() => {
-        let result = tenants.filter(t =>
-            t.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            t.username?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-
-        result.sort((a, b) => {
-            const dateA = new Date(a.created_at).getTime();
-            const dateB = new Date(b.created_at).getTime();
-            return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
-        });
-
-        return result;
-    }, [tenants, searchTerm, sortOrder]);
-
-    const filteredLeads = useMemo(() => {
-        let result = leads.filter(l => {
-            const matchesSearch = l.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                l.phone_number?.includes(searchTerm) ||
-                l.tenant_name?.toLowerCase().includes(searchTerm.toLowerCase());
-
-            const matchesTenant = tenantFilter === 'all' || l.tenant_id.toString() === tenantFilter;
-
-            return matchesSearch && matchesTenant;
-        });
-
-        result.sort((a, b) => {
-            const dateA = new Date(a.created_at).getTime();
-            const dateB = new Date(b.created_at).getTime();
-            return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
-        });
-
-        return result;
-    }, [leads, searchTerm, sortOrder, tenantFilter]);
-
-    const displayedData = activeTab === 'tenants' ? filteredTenants : filteredLeads;
-    const totalPages = Math.ceil(displayedData.length / itemsPerPage);
-    const paginatedData = useMemo(() => {
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        return displayedData.slice(startIndex, startIndex + itemsPerPage);
-    }, [displayedData, currentPage, itemsPerPage]);
-
-    return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <StatCard label="Tổng Tenants" value={stats.total_tenants} unit="Accounts" />
-                <StatCard label="Đang Hoạt Động" value={stats.active_tenants} unit="Active Tenants" highlighted />
-                <StatCard label="Tổng Token Hệ Thống" value={Number(stats.total_system_tokens).toLocaleString()} unit="Total Usage" />
+        <div className="p-4 sm:p-8 w-full max-w-7xl mx-auto flex-1">
+          <div className="space-y-6 animate-in fade-in duration-500">
+            {/* STAT CARDS */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <StatCard label="Tổng đối tác" value={stats.total_tenants} unit="CÔNG TY" />
+              <StatCard label="Tổng đơn hàng" value={stats.total_orders} unit="ĐƠN HÀNG" />
+              <StatCard label="Token toàn hệ thống" value={Number(stats.total_system_tokens).toLocaleString()} unit="TOTAL USAGE" />
             </div>
 
-            <div className="flex overflow-x-auto scrollbar-hide gap-6 border-b border-slate-200">
-                <button onClick={() => handleTabChange('tenants')} className={`pb-3 text-[11px] font-bold uppercase tracking-widest transition-all border-b-2 whitespace-nowrap shrink-0 ${activeTab === 'tenants' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Danh sách Tenancy</button>
-                <button onClick={() => handleTabChange('leads')} className={`pb-3 text-[11px] font-bold uppercase tracking-widest transition-all border-b-2 whitespace-nowrap shrink-0 ${activeTab === 'leads' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Danh sách Khách hàng</button>
-            </div>
-
-            <div className="space-y-5">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-5">
-                    <div className="max-w-md">
-                        <h2 className="text-xl font-black text-slate-800 tracking-tight">{activeTab === 'tenants' ? 'Quản lý Tenancy' : 'Lịch sử Khách hàng'}</h2>
-                        <p className="text-sm text-slate-500 font-medium leading-relaxed">{activeTab === 'tenants' ? 'Quản lý tài nguyên, giới hạn token và trạng thái hoạt động của các đối tác.' : 'Theo dõi danh sách người dùng đã để lại thông tin và lịch sử hội thoại AI.'}</p>
-                    </div>
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
-                        <button onClick={handleRefresh} disabled={isRefreshing} className="flex-1 sm:flex-none bg-white hover:bg-slate-50 text-slate-500 hover:text-blue-600 px-4 py-2 rounded-xl font-bold border border-slate-200 shadow-sm transition-all flex items-center justify-center gap-2 text-sm h-[42px]">
-                            <RefreshIcon spin={isRefreshing} />
-                            <span>Làm mới</span>
-                        </button>
-                        {activeTab === 'tenants' && (
-                            <button onClick={() => { setSelectedTenant(null); setShowModal(true); }} className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl font-bold shadow-lg shadow-blue-600/20 text-sm flex items-center justify-center gap-2 transition-all h-[42px]">
-                                <span className="text-lg">+</span> Thêm mới
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row gap-4 items-stretch lg:items-center">
-                    <div className="relative flex-1">
-                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><SearchIcon /></div>
-                        <input type="text" placeholder={activeTab === 'tenants' ? "Tìm công ty, tài khoản..." : "Tìm tên khách hàng, SĐT, công ty..."} className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all text-sm font-medium text-slate-700" value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} />
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        {/* Tenant Filter (Chi hien thi o tab Leads) */}
-                        {activeTab === 'leads' && (
-                            <div className="relative min-w-[200px]">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                                </div>
-                                <select
-                                    className="w-full pl-9 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 focus:outline-none focus:border-blue-500 appearance-none cursor-pointer"
-                                    value={tenantFilter}
-                                    onChange={(e) => { setTenantFilter(e.target.value); setCurrentPage(1); }}
-                                >
-                                    <option value="all">Tất cả công ty</option>
-                                    {tenants.map((t: any) => (
-                                        <option key={t.id} value={t.id}>{t.company_name}</option>
-                                    ))}
-                                </select>
-                                <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-400">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="relative min-w-[180px]">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><SortIcon /></div>
-                            <select className="w-full pl-9 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 focus:outline-none focus:border-blue-500 appearance-none cursor-pointer" value={sortOrder} onChange={(e) => { setSortOrder(e.target.value as 'desc' | 'asc'); setCurrentPage(1); }}>
-                                <option value="desc">Mới nhất trước</option>
-                                <option value="asc">Cũ nhất trước</option>
-                            </select>
-                            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-400">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="h-6 w-px bg-slate-200 hidden lg:block mx-1"></div>
-                    <div className="relative min-w-[140px]">
-                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h18M3 6h18M3 18h18" /></svg>
-                        </div>
-                        <select
-                            className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 focus:outline-none focus:border-blue-500 appearance-none cursor-pointer"
-                            value={itemsPerPage}
-                            onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                        >
-                            <option value={10}>Hiển thị: 10 dòng</option>
-                            <option value={20}>Hiển thị: 20 dòng</option>
-                            <option value={50}>Hiển thị: 50 dòng</option>
-                            <option value={100}>Hiển thị: 100 dòng</option>
-                        </select>
-                        <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                        </div>
-                    </div>
-                    <div className="h-6 w-px bg-slate-200 hidden lg:block mx-1"></div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap text-center lg:text-left">Kết quả: <span className="text-blue-600 font-black">{displayedData.length}</span></div>
-                </div>
-
-                {/* Desktop Table - Hidden on Mobile */}
-                <div className="hidden md:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                    <table className="w-full text-left text-sm">
-                        {activeTab === 'tenants' ? (
-                            <>
-                                <thead className="bg-slate-50/80 border-b border-slate-100">
-                                    <tr>
-                                        <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest whitespace-nowrap">Tenant ID</th>
-                                        <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Khách hàng</th>
-                                        <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Tài khoản</th>
-                                        <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Tiến độ Token</th>
-                                        <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Ngày tạo</th>
-                                        <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest text-right">Trạng thái</th>
-                                        <th className="px-6 py-4 text-right"></th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 text-[13px]">
-                                    {paginatedData.length === 0 ? (
-                                        <tr><td colSpan={6} className="p-12 text-center text-slate-400 italic">Không tìm thấy dữ liệu.</td></tr>
-                                    ) : paginatedData.map((t: any) => (
-                                        <tr key={t.id} className="hover:bg-slate-50/50 transition-colors group">
-                                            <td className="px-6 py-4">
-                                                <span className="font-mono text-blue-600 font-black text-xs">{t.id}</span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-sm"><UserIcon /></div>
-                                                    <div>
-                                                        <p className="font-bold text-slate-900 leading-none mb-1">{t.company_name}</p>
-                                                        <p className="text-[11px] text-blue-500 font-medium">{t.email || 'No email'}</p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 font-mono text-slate-600 text-[11px]">{t.username}</td>
-                                            <td className="px-6 py-4 w-48">
-                                                <div className="flex flex-col">
-                                                    <div className="flex justify-between items-baseline mb-1">
-                                                        <span className="font-black text-slate-700 text-[11px]">
-                                                            {Number(t.total_usage || 0).toLocaleString()}
-                                                        </span>
-                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                                                            / {Number(t.token_limit || 0).toLocaleString()}
-                                                        </span>
-                                                    </div>
-                                                    <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden shadow-inner">
-                                                        <div className={`h-full rounded-full transition-all duration-700 ${(Number(t.total_usage) / Number(t.token_limit || 1)) > 0.9 ? 'bg-rose-500' : 'bg-blue-600'}`} style={{ width: `${Math.min((Number(t.total_usage || 0) / Number(t.token_limit || 1)) * 100, 100)}%` }}></div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-slate-500 text-[11px] font-bold">{new Date(t.created_at).toLocaleDateString('vi-VN')}</td>
-                                            <td className="px-6 py-4 text-right">
-                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${t.is_active ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
-                                                    <span className={`w-1.5 h-1.5 rounded-full ${t.is_active ? 'bg-emerald-500' : 'bg-rose-500'} animate-pulse`}></span>
-                                                    {t.is_active ? 'Active' : 'Locked'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <button onClick={() => { setSelectedTenant(t); setShowModal(true); }} className="bg-slate-100 hover:bg-blue-600 text-slate-600 hover:text-white font-bold p-2 px-4 rounded-lg transition-all text-[11px] uppercase tracking-wider">Sửa</button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </>
-                        ) : (
-                            <>
-                                <thead className="bg-slate-50/80 border-b border-slate-100">
-                                    <tr>
-                                        <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Khách hàng</th>
-                                        <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Công ty (Tenant)</th>
-                                        <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Liên hệ</th>
-                                        <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Token Chat</th>
-                                        <th className="px-6 py-4 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Ngày tạo</th>
-                                        <th className="px-6 py-4 text-right"></th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 text-[13px]">
-                                    {paginatedData.length === 0 ? (
-                                        <tr><td colSpan={6} className="p-12 text-center text-slate-400 italic">Không tìm thấy dữ liệu.</td></tr>
-                                    ) : paginatedData.map((l: any) => (
-                                        <tr key={l.id} className="hover:bg-slate-50/50 transition-colors group">
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-sm"><UserIcon /></div>
-                                                    <div>
-                                                        <p className="font-bold text-slate-900 leading-none">{l.customer_name}</p>
-                                                        <p className="text-[10px] text-slate-400 font-mono mt-1">ID: {l.id}</p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded text-[11px]">{l.tenant_name}</span>
-                                            </td>
-                                            <td className="px-6 py-4 font-bold text-blue-600 text-[11px]">{l.phone_number}</td>
-                                            <td className="px-6 py-4">
-                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-black bg-blue-50 text-blue-700 border border-blue-100">
-                                                    {Number(l.total_chat_tokens).toLocaleString()}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-slate-500 text-[11px] font-bold">{new Date(l.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
-                                            <td className="px-6 py-4 text-right">
-                                                <button onClick={() => handleViewChat(l)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-md shadow-blue-600/10">Xem Chat</button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </>
-                        )}
-                    </table>
-                </div>
-
-                {/* Mobile Card Layout - Hidden on Desktop */}
-                <div className="md:hidden space-y-4">
-                    {paginatedData.length === 0 ? (
-                        <div className="bg-white p-12 text-center text-slate-400 italic rounded-2xl border border-dashed border-slate-200">Không tìm thấy dữ liệu.</div>
-                    ) : paginatedData.map((item: any) => (
-                        <div key={item.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                            <div className="flex justify-between items-start">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100"><UserIcon /></div>
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-mono text-blue-600 font-black text-[10px]">{item.id}</span>
-                                            <p className="font-bold text-slate-900 leading-tight">{activeTab === 'tenants' ? item.company_name : item.customer_name}</p>
-                                        </div>
-                                        <p className="text-[11px] text-slate-400 font-medium">
-                                            {activeTab === 'tenants' ? `User: ${item.username}` : `SĐT: ${item.phone_number}`}
-                                        </p>
-                                    </div>
-                                </div>
-                                {activeTab === 'tenants' ? (
-                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${item.is_active ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
-                                        {item.is_active ? 'Active' : 'Locked'}
-                                    </span>
-                                ) : (
-                                    <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-tight border border-blue-100">
-                                        {Number(item.total_chat_tokens).toLocaleString()} Tokens
-                                    </span>
-                                )}
-                            </div>
-
-                            {activeTab === 'tenants' ? (
-                                <div className="space-y-3">
-                                    <div className="p-3 bg-slate-50 rounded-xl">
-                                        <div className="flex justify-between items-baseline mb-1.5">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tiến độ Token</span>
-                                            <span className="text-[11px] font-black text-slate-700">
-                                                {Number(item.total_usage || 0).toLocaleString()} / {Number(item.token_limit || 0).toLocaleString()}
-                                            </span>
-                                        </div>
-                                        <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                                            <div className={`h-full rounded-full transition-all duration-700 ${(Number(item.total_usage) / Number(item.token_limit || 1)) > 0.9 ? 'bg-rose-500' : 'bg-blue-600'}`} style={{ width: `${Math.min((Number(item.total_usage || 0) / Number(item.token_limit || 1)) * 100, 100)}%` }}></div>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button onClick={() => { setSelectedTenant(item); setShowModal(true); }} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 rounded-xl transition-all text-xs uppercase tracking-widest">Chỉnh sửa</button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center text-[11px]">
-                                        <div className="flex items-center gap-1.5">
-                                            <span className="text-slate-400 font-bold uppercase tracking-tighter">Công ty:</span>
-                                            <span className="font-black text-blue-600">{item.tenant_name}</span>
-                                        </div>
-                                        <span className="text-slate-400 font-medium">{new Date(item.created_at).toLocaleDateString('vi-VN')}</span>
-                                    </div>
-                                    <button onClick={() => handleViewChat(item)} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl shadow-lg shadow-blue-600/20 text-xs transition-all tracking-widest uppercase">Xem lịch sử Chat</button>
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
-
-                {/* Pagination Controls */}
-                {totalPages >= 1 && displayedData.length > 0 && (
-                    <div className="flex items-center justify-center gap-2 py-8 mt-4 border-t border-slate-100">
-                        <div className="flex items-center gap-1 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
-                            {/* First Page */}
-                            <button
-                                onClick={() => setCurrentPage(1)}
-                                disabled={currentPage === 1}
-                                className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${currentPage === 1 ? 'text-slate-200 cursor-not-allowed' : 'text-slate-500 hover:bg-slate-50 hover:text-blue-600'}`}
-                            >
-                                <ChevronFirstIcon />
-                            </button>
-
-                            {/* Prev Page */}
-                            <button
-                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                                disabled={currentPage === 1}
-                                className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${currentPage === 1 ? 'text-slate-200 cursor-not-allowed' : 'text-slate-500 hover:bg-slate-50 hover:text-blue-600'}`}
-                            >
-                                <ChevronLeftIcon />
-                            </button>
-
-                            <div className="flex items-center gap-1 mx-1">
-                                {(() => {
-                                    const pages = [];
-                                    const delta = 2;
-                                    const left = currentPage - delta;
-                                    const right = currentPage + delta;
-
-                                    for (let i = 1; i <= totalPages; i++) {
-                                        if (i === 1 || i === totalPages || (i >= left && i <= right)) {
-                                            pages.push(i);
-                                        } else if (i === left - 1 || i === right + 1) {
-                                            pages.push('...');
-                                        }
-                                    }
-
-                                    const uniquePages = pages.filter((item, pos, self) => self.indexOf(item) === pos);
-
-                                    return uniquePages.map((p, idx) => (
-                                        p === '...' ? (
-                                            <span key={`gap-${idx}`} className="w-9 h-9 flex items-center justify-center text-slate-300 font-bold">...</span>
-                                        ) : (
-                                            <button
-                                                key={p}
-                                                onClick={() => setCurrentPage(Number(p))}
-                                                className={`w-9 h-9 rounded-xl text-[13px] font-black transition-all ${currentPage === p ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:bg-slate-50'}`}
-                                            >
-                                                {p}
-                                            </button>
-                                        )
-                                    ));
-                                })()}
-                            </div>
-
-                            {/* Next Page */}
-                            <button
-                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                                disabled={currentPage === totalPages}
-                                className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${currentPage === totalPages ? 'text-slate-200 cursor-not-allowed' : 'text-slate-500 hover:bg-slate-50 hover:text-blue-600'}`}
-                            >
-                                <ChevronRightIcon />
-                            </button>
-
-                            {/* Last Page */}
-                            <button
-                                onClick={() => setCurrentPage(totalPages)}
-                                disabled={currentPage === totalPages}
-                                className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${currentPage === totalPages ? 'text-slate-200 cursor-not-allowed' : 'text-slate-500 hover:bg-slate-50 hover:text-blue-600'}`}
-                            >
-                                <ChevronLastIcon />
-                            </button>
-                        </div>
-                    </div>
+            {/* HEADER ACTIONS */}
+            <div className="flex justify-between items-end gap-4 mt-8">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800 uppercase tracking-tight">
+                  {activeTab === 'tenants' ? 'Quản lý danh sách đối tác' : activeTab === 'leads' ? 'Dữ liệu hội thoại toàn cục' : 'Quản trị đơn hàng hệ thống'}
+                </h2>
+                <p className="text-xs text-slate-500 font-medium mt-1">
+                  {activeTab === 'tenants' ? 'Phát triển Tenancy, giới hạn sử dụng và cấp quyền.' : activeTab === 'leads' ? 'Theo dõi nội dung Chat AI giữa bot và người dùng của tất cả các tenant.' : 'Theo dõi và quản lý trạng thái xử lý đơn hàng của các đối tác.'}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={handleRefresh} className="p-2.5 bg-white border border-slate-200 rounded-sm text-slate-500 hover:text-[#007BFF] shadow-sm transition-all"><RefreshIcon spin={isRefreshing} /></button>
+                {activeTab === 'tenants' && (
+                  <button onClick={() => { setSelectedTenant(null); setShowModal(true); }} className="px-4 py-2 bg-[#007BFF] text-white text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-[#0066CC] transition-all shadow-sm">+ Thêm đối tác</button>
                 )}
+              </div>
             </div>
 
-            {/* MODALS */}
-            {showModal && <TenantModal tenant={selectedTenant} onClose={() => setShowModal(false)} />}
+            {/* FILTERS */}
+            <div className="bg-white p-4 border border-slate-200 rounded-sm shadow-sm flex flex-col lg:flex-row gap-4">
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><SearchIcon /></div>
+                <input type="text" placeholder="Tìm kiếm nhanh..." className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-sm text-xs font-bold outline-none focus:border-slate-400" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+              </div>
+              <div className="flex gap-2 w-full lg:w-auto">
+                {(activeTab === 'leads' || activeTab === 'orders') && (
+                  <select className="flex-1 lg:w-48 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-sm text-xs font-bold text-slate-600 outline-none" value={tenantFilter} onChange={(e) => setTenantFilter(e.target.value)}>
+                    <option value="all">Tất cả đối tác</option>
+                    {tenants.map((t: any) => (<option key={t.id} value={t.id}>{t.company_name}</option>))}
+                  </select>
+                )}
+                <select className="flex-1 lg:w-40 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-sm text-xs font-bold text-slate-600 outline-none" value={sortOrder} onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}>
+                  <option value="desc">Mới nhất</option>
+                  <option value="asc">Cũ nhất</option>
+                </select>
+              </div>
+            </div>
 
-            {selectedLead && (
-                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
-                    <div className="bg-white rounded-3xl w-full max-w-2xl h-[85vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-300 overflow-hidden ring-1 ring-black/5">
-                        <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white z-10 shrink-0">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-sm"><UserIcon /></div>
-                                <div>
-                                    <h3 className="font-black text-slate-800 leading-tight">{selectedLead.customer_name}</h3>
-                                    <div className="flex items-center gap-2 mt-0.5">
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{selectedLead.phone_number}</p>
-                                        <span className="text-slate-300 text-[10px]">•</span>
-                                        <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Tenant: {selectedLead.tenant_name}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <button onClick={() => setSelectedLead(null)} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition"><CloseIcon /></button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50 space-y-6 scrollbar-hide">
-                            {loadingChat ? (
-                                <div className="flex flex-col items-center justify-center py-20 gap-3">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-blue-600"></div>
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Đang tải tin nhắn...</span>
-                                </div>
-                            ) : messages.length === 0 ? (
-                                <div className="text-center py-20">
-                                    <div className="w-16 h-16 bg-white rounded-full border border-slate-100 flex items-center justify-center mx-auto mb-4 text-slate-300 shadow-sm">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                                    </div>
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest text-center">Chưa có lịch sử tin nhắn</p>
-                                </div>
-                            ) : messages.map((msg, i) => (
-                                <div key={i} className="space-y-2 group">
-                                    {msg.query && (
-                                        <div className="flex justify-end animate-in slide-in-from-right-2 duration-300">
-                                            <div className="bg-blue-600 text-white px-5 py-3 rounded-2xl rounded-tr-sm text-sm font-medium max-w-[85%] shadow-lg shadow-blue-600/10 leading-relaxed">
-                                                {msg.query}
-                                            </div>
-                                        </div>
-                                    )}
-                                    {msg.answer && (
-                                        <div className="flex justify-start gap-3 animate-in slide-in-from-left-2 duration-300">
-                                            <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-[10px] font-black text-blue-600 shrink-0 shadow-sm mt-1">AI</div>
-                                            <div className="bg-white border border-slate-200 text-slate-800 px-5 py-3 rounded-2xl rounded-tl-sm text-sm font-medium max-w-[85%] shadow-sm leading-relaxed border-l-4 border-l-blue-500 whitespace-pre-wrap">
-                                                {msg.answer}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
+            {/* MAIN TABLE */}
+            <div className="bg-white border border-slate-200 rounded-sm shadow-sm overflow-hidden hidden md:block text-xs">
+              <table className="w-full text-left tracking-tight">
+                <thead className="bg-slate-50 border-b border-slate-100 uppercase">
+                  {activeTab === 'tenants' ? (
+                    <tr>
+                      <th className="px-6 py-4 font-bold text-slate-400 text-[10px] tracking-widest">ID</th>
+                      <th className="px-6 py-4 font-bold text-slate-400 text-[10px] tracking-widest">Khách hàng / Email</th>
+                      <th className="px-6 py-4 font-bold text-slate-400 text-[10px] tracking-widest">Tài khoản</th>
+                      <th className="px-6 py-4"></th>
+                    </tr>
+                  ) : activeTab === 'leads' ? (
+                    <tr>
+                      <th className="px-6 py-4 font-bold text-slate-400 text-[10px] tracking-widest">Khách hàng</th>
+                      <th className="px-6 py-4 font-bold text-slate-400 text-[10px] tracking-widest">Đối tác (Tenant)</th>
+                      <th className="px-6 py-4 font-bold text-slate-400 text-[10px] tracking-widest text-right">Tokens</th>
+                      <th className="px-6 py-4 font-bold text-slate-400 text-[10px] tracking-widest text-right">Ngày tham gia</th>
+                      <th className="px-6 py-4"></th>
+                    </tr>
+                  ) : (
+                    <tr>
+                      <th className="px-6 py-4 font-bold text-slate-400 text-[10px] tracking-widest">Đơn hàng / SĐT</th>
+                      <th className="px-6 py-4 font-bold text-slate-400 text-[10px] tracking-widest">Đối tác (Tenant)</th>
+                      <th className="px-6 py-4 font-bold text-slate-400 text-[10px] tracking-widest text-right">Thành tiền</th>
+                      <th className="px-6 py-4 font-bold text-slate-400 text-[10px] tracking-widest text-center">Trạng thái</th>
+                      <th className="px-6 py-4"></th>
+                    </tr>
+                  )}
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {paginatedData.length === 0 ? (
+                    <tr><td colSpan={10} className="p-12 text-center text-slate-400 italic">Không tìm thấy dữ liệu.</td></tr>
+                  ) : activeTab === 'tenants' ? (
+                      (paginatedData as any[]).map(t => (
+                        <tr key={t.id} className="hover:bg-slate-50/50">
+                          <td className="px-6 py-4"><span className="bg-blue-50 text-[#007BFF] font-black text-[10px] px-2 py-1 rounded-sm border border-blue-100">#{t.id}</span></td>
+                          <td className="px-6 py-4 font-bold text-slate-800">{t.company_name} <p className="text-[10px] font-bold text-slate-400 mt-0.5 normal-case">{t.email || 'N/A'}</p></td>
+                          <td className="px-6 py-4 font-mono font-bold text-slate-600">{t.username}</td>
+                          <td className="px-6 py-4 text-right"><button onClick={() => { setSelectedTenant(t); setShowModal(true); }} className="px-3 py-1.5 bg-slate-100 text-slate-600 text-[9px] font-bold uppercase tracking-widest rounded-sm hover:bg-slate-200 transition-all">Sửa</button></td>
+                        </tr>
+                    ))
+                  ) : activeTab === 'leads' ? (
+                    (paginatedData as any[]).map(l => (
+                      <tr key={l.id} className="hover:bg-slate-50/50 group">
+                        <td className="px-6 py-4 font-bold text-slate-800">Khách hàng #{l.id.toString().padStart(2, '0')}</td>
+                        <td className="px-6 py-4"><span className="font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded-sm">{l.tenant_name}</span></td>
+                        <td className="px-6 py-4 text-right font-bold text-[#007BFF]">{Number(l.total_chat_tokens).toLocaleString()}</td>
+                        <td className="px-6 py-4 text-right text-slate-400 font-bold">{new Date(l.created_at).toLocaleDateString('vi-VN')}</td>
+                        <td className="px-6 py-4 text-right"><button onClick={() => handleViewChat(l)} className="px-3 py-1.5 bg-[#007BFF] text-white text-[9px] font-bold uppercase tracking-widest rounded-sm hover:bg-[#0066CC] transition-all">Xem nội dung</button></td>
+                      </tr>
+                    ))
+                  ) : (
+                    (paginatedData as any[]).map(o => (
+                      <tr key={o.id} className="hover:bg-slate-50/50 group">
+                        <td className="px-6 py-4"><button onClick={() => setSelectedOrder(o)} className="font-bold text-slate-800 hover:text-[#007BFF] transition-colors border-b border-transparent hover:border-[#007BFF] leading-tight">{o.customer_name}</button><p className="text-[10px] font-bold text-slate-400 mt-0.5 tracking-wider">{o.phone_number}</p></td>
+                        <td className="px-6 py-4"><span className="font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded-sm">{o.tenant_name}</span></td>
+                        <td className="px-6 py-4 text-right font-bold text-slate-900">{Number(o.total_amount).toLocaleString()} đ</td>
+                        <td className="px-6 py-4 text-center"><span className={`inline-flex items-center gap-1 px-2 py-1 rounded-sm text-[9px] font-bold uppercase tracking-widest border ${o.is_processed ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{o.is_processed ? 'XONG' : 'MỚI'}</span></td>
+                        <td className="px-6 py-4 text-right"><button onClick={() => setSelectedOrder(o)} className="px-3 py-1.5 bg-slate-100/80 text-slate-600 text-[9px] font-bold uppercase tracking-widest rounded-sm hover:bg-slate-200 transition-all">Chi tiết</button></td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* MOBILE LAYOUT */}
+            <div className="md:hidden space-y-3">
+              {paginatedData.map((item: any) => (
+                <div key={item.id} className="bg-white p-4 border border-slate-200 rounded-sm shadow-sm space-y-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-3">
+                      <span className="bg-blue-50 text-[#007BFF] font-black text-[10px] px-2 py-1 rounded-sm border border-blue-100">#{item.id}</span>
+                      <div>
+                        <p className="font-bold text-slate-800">{activeTab === 'tenants' ? item.company_name : activeTab === 'leads' ? `Khách hàng #${item.id.toString().padStart(2, '0')}` : item.customer_name}</p>
+                        <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">{activeTab === 'tenants' ? item.username : item.tenant_name}</p>
+                      </div>
                     </div>
+                  </div>
+                  <button onClick={() => activeTab === 'tenants' ? (setSelectedTenant(item), setShowModal(true)) : activeTab === 'leads' ? handleViewChat(item) : setSelectedOrder(item)} className="w-full py-3 bg-[#007BFF] text-white text-[10px] font-bold uppercase tracking-widest rounded-sm">CHỌN XEM</button>
                 </div>
-            )}
+              ))}
+            </div>
+          </div>
         </div>
-    );
+      </main>
+
+      {/* MODALS */}
+      {showModal && <TenantModal tenant={selectedTenant} onClose={() => setShowModal(false)} />}
+
+      {selectedOrder && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-4xl rounded-xl border border-slate-200 shadow-[0_25px_70px_rgba(0,0,0,0.15)] overflow-hidden animate-in zoom-in-95 duration-300">
+             {/* Header: Minimal Identity */}
+            <div className="px-10 py-6 border-b border-slate-200 flex justify-between items-center bg-white">
+              <div className="flex items-center gap-3">
+                <div className="w-1.5 h-6 bg-[#007BFF] rounded-full"></div>
+                <h3 className="font-bold text-slate-900 text-base tracking-tight">Chi tiết vận đơn #{selectedOrder.id}</h3>
+              </div>
+              <button 
+                onClick={() => setSelectedOrder(null)} 
+                className="p-2 hover:bg-slate-100 rounded-sm transition-colors text-slate-400"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex flex-col lg:flex-row h-[550px]">
+              {/* Left Column: Essential Record */}
+              <div className="flex-1 overflow-y-auto p-10 space-y-10">
+                <div className="grid grid-cols-2 gap-x-16 gap-y-10">
+                  <section>
+                    <h4 className="text-[11px] font-bold text-slate-400 uppercase mb-4 tracking-normal">Thông tin khách hàng</h4>
+                    <div className="space-y-1">
+                      <p className="text-base font-bold text-slate-900">{selectedOrder.customer_name}</p>
+                      <p className="text-sm text-slate-500">{selectedOrder.phone_number}</p>
+                    </div>
+                  </section>
+
+                  <section>
+                    <h4 className="text-[11px] font-bold text-slate-400 uppercase mb-4 tracking-normal">Ghi nhận bởi đối tác</h4>
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-slate-800">{selectedOrder.tenant_name || "Hệ thống BlueAI"}</p>
+                      <p className="text-[11px] text-slate-400">ID: {selectedOrder.tenant_id} • {new Date(selectedOrder.created_at).toLocaleString('vi-VN')}</p>
+                    </div>
+                  </section>
+
+                  <section className="col-span-2">
+                    <h4 className="text-[11px] font-bold text-slate-400 uppercase mb-4 tracking-normal">Địa chỉ giao nhận</h4>
+                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-sm">
+                      <p className="text-sm text-slate-700 leading-relaxed font-medium">
+                        {selectedOrder.address || "Chưa ghi nhận địa chỉ chi tiết cụ thể."}
+                      </p>
+                    </div>
+                  </section>
+
+                  <section className="col-span-2">
+                    <h4 className="text-[11px] font-bold text-slate-400 uppercase mb-4 tracking-normal">Nội dung đơn hàng</h4>
+                    <div className="p-5 border border-slate-200 rounded-sm bg-white min-h-[100px]">
+                      <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap font-medium">
+                        {selectedOrder.order_details}
+                      </p>
+                    </div>
+                  </section>
+                </div>
+              </div>
+
+              {/* Right Column: Processing Panel */}
+              <div className="w-full lg:w-80 bg-slate-50 border-l border-slate-200 p-10 flex flex-col justify-between">
+                <div className="space-y-10">
+                  <section>
+                    <h4 className="text-[11px] font-bold text-slate-400 uppercase mb-6 tracking-normal">Chi tiết thanh toán</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-baseline">
+                        <span className="text-xs font-bold text-slate-500">Tổng cộng</span>
+                        <span className="text-2xl font-bold text-slate-900 leading-none">
+                          {Number(selectedOrder.total_amount).toLocaleString()} <span className="text-xs font-medium text-slate-400">đ</span>
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center bg-white border border-slate-200 p-2 rounded-sm mt-4">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase pl-1">Pháp lý</span>
+                        <span className="text-[9px] font-bold text-[#007BFF] uppercase pr-1">Vận chuyển COD</span>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section>
+                    <h4 className="text-[11px] font-bold text-slate-400 uppercase mb-4 tracking-normal">Trạng thái vận đơn</h4>
+                    <select 
+                      value={selectedOrder.is_processed ? 'completed' : 'processing'}
+                      onChange={(e) => {
+                        const val = e.target.value === 'completed';
+                        handleToggleOrderProcessed(selectedOrder.id, !val);
+                        setSelectedOrder(prev => prev ? {...prev, is_processed: val} : null);
+                      }}
+                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-sm text-xs font-bold outline-none focus:border-[#007BFF] appearance-none cursor-pointer"
+                    >
+                      <option value="new" disabled>Đơn hàng mới</option>
+                      <option value="processing">Đang xử lý</option>
+                      <option value="shipping">Bắt đầu giao hàng</option>
+                      <option value="completed">Đã bàn giao khách</option>
+                      <option value="cancelled">Hủy bỏ đơn hàng</option>
+                    </select>
+                    <p className="text-[10px] text-slate-400 mt-3 italic font-medium leading-relaxed">
+                      * Cập nhật trạng thái sẽ tự động lưu vào nhật ký vận đơn.
+                    </p>
+                  </section>
+                </div>
+
+                <button 
+                  onClick={() => setSelectedOrder(null)} 
+                  className="w-full py-4 bg-slate-800 text-white font-bold text-xs uppercase tracking-wide rounded-sm hover:bg-slate-900 transition-colors shadow-lg active:scale-[0.98]"
+                >
+                  Xác nhận & Thoát
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedLead && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 lg:p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-2xl h-full lg:h-[85vh] lg:rounded-sm border border-slate-200 shadow-2xl flex flex-col overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50"><div><h3 className="font-bold text-slate-800 uppercase tracking-widest text-xs">Cuộc trò chuyện: Khách hàng #{selectedLead.id.toString().padStart(2, '0')}</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Tenant: {selectedLead.tenant_name}</p></div><button onClick={() => setSelectedLead(null)} className="p-2 text-slate-400 hover:text-slate-600 transition-colors"><CloseIcon /></button></div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/30 scrollbar-hide">
+              {loadingChat ? (<div className="flex justify-center py-20 animate-pulse text-slate-300"><RefreshIcon spin={true} /></div>) : messages.length === 0 ? (<div className="text-center py-40 text-slate-400 font-bold uppercase text-[10px] tracking-widest">Không có lịch sử hội thoại</div>) : (messages.map((m, i) => (<div key={i} className="space-y-2">{m.query && <div className="flex justify-end"><div className="bg-white border border-slate-200 p-4 rounded-sm text-sm font-semibold text-slate-700 max-w-[85%]">{m.query}</div></div>}{m.answer && <div className="flex justify-start"><div className="bg-[#007BFF] text-white p-4 rounded-sm text-sm font-medium max-w-[85%] border-l-4 border-blue-500 whitespace-pre-wrap">{m.answer}</div></div>}</div>)))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
-function StatCard({ label, value, unit, highlighted = false }: any) {
-    return (
-        <div className={`p-6 rounded-3xl border shadow-sm shadow-slate-200/50 ring-1 ring-slate-900/5 transition-all hover:shadow-xl hover:scale-[1.02] duration-300 ${highlighted ? 'bg-gradient-to-br from-blue-600 to-indigo-700 border-transparent text-white' : 'bg-white border-slate-200'}`}>
-            <p className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${highlighted ? 'text-blue-100' : 'text-slate-400'}`}>{label}</p>
-            <div className="flex items-baseline gap-1.5">
-                <span className={`text-3xl font-black tracking-tighter ${highlighted ? 'text-white' : 'text-slate-900'}`}>{value}</span>
-                <span className={`text-[9px] font-bold uppercase tracking-widest mb-1 ${highlighted ? 'text-blue-200' : 'text-slate-400'}`}>{unit}</span>
-            </div>
-        </div>
-    );
-}
+// --- SUB COMPONENTS ---
+function TabButton({ active, onClick, label }: any) { return (<button onClick={onClick} className={`px-5 py-3 text-[10px] font-bold uppercase tracking-widest transition-all border-b-2 whitespace-nowrap ${active ? 'border-[#007BFF] text-slate-800' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>{label}</button>); }
+function TabVerticalButton({ active, onClick, label, icon }: any) { return (<button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-3.5 text-[11px] font-bold uppercase tracking-widest transition-all ${active ? 'bg-[#007BFF] text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}><div className={`shrink-0 ${active?'text-white':'text-slate-400'}`}>{icon}</div>{label}</button>); }
+function StatCard({ label, value, unit }: any) { return (<div className="p-6 bg-white border border-slate-200 rounded-sm shadow-sm"><p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-50 pb-2">{label}</p><div className="flex items-baseline gap-2"><span className="text-3xl font-bold text-slate-900 tracking-tighter">{value}</span><span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{unit}</span></div></div>); }
