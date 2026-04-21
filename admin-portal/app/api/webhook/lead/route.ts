@@ -8,14 +8,11 @@ export async function POST(req: Request) {
 
     const {
       conversation_id,
-      customer_name,
-      phone_number,
-      note,
       user_id,
       tenant_id
     } = body;
 
-    console.log("📥 Nhận Webhook:", { conversation_id, user_id, tenant_id });
+    console.log("📥 Nhận Webhook Lead:", { conversation_id, user_id, tenant_id });
 
     if (!conversation_id) {
       return NextResponse.json({ error: 'Thiếu conversation_id' }, { status: 400 });
@@ -29,24 +26,18 @@ export async function POST(req: Request) {
       [conversation_id]
     );
 
-    // ==> TRƯỜNG HỢP 1: KHÁCH CŨ (Đã có trong DB)
-    // - Không lưu lại.
-    // - Không gửi mail.
-    // - Trả về is_new_conversation = FALSE để Dify biết được phép lấy lịch sử.
     if ((checkExist.rowCount ?? 0) > 0) {
       console.log("⛔ Lead đã tồn tại -> Bỏ qua lưu & gửi mail.");
       return NextResponse.json({
         status: 'skipped',
         message: 'Lead already exists',
-        is_new_conversation: false // <--- Tín hiệu QUAN TRỌNG: "Cũ rồi, lấy lịch sử đi"
+        is_new_conversation: false 
       });
     }
 
     // ==================================================================
-    // 🟢 TRƯỜNG HỢP 2: KHÁCH MỚI (Chưa có trong DB)
+    // 🟢 TRƯỜNG HỢP 2: KHÁCH MỚI
     // ==================================================================
-
-    // A. Xác định Tenant (Logic tìm tenant để gán khách)
     let targetTenantId = 1;
     let targetTenantEmail = "";
 
@@ -55,20 +46,10 @@ export async function POST(req: Request) {
       if (res.rows.length > 0) {
         targetTenantId = res.rows[0].id;
         targetTenantEmail = res.rows[0].email;
-      } else {
-        // Fallback nếu ID gửi lên không tồn tại
-        const fallbackRes = await adminDb.query('SELECT id, email FROM tenants LIMIT 1');
-        targetTenantId = fallbackRes.rows[0]?.id || 1;
-        targetTenantEmail = fallbackRes.rows[0]?.email;
       }
-    } else {
-      // Fallback nếu không có tenant_id
-      const res = await adminDb.query('SELECT id, email FROM tenants LIMIT 1');
-      targetTenantId = res.rows[0]?.id || 1;
-      targetTenantEmail = res.rows[0]?.email;
     }
 
-    // B. Lưu vào Database (Insert mới hoàn toàn)
+    // B. Lưu vào Database (Sử dụng các giá trị mặc định)
     await adminDb.query(
       `INSERT INTO leads (
           tenant_id, 
@@ -83,21 +64,20 @@ export async function POST(req: Request) {
       [
         targetTenantId,
         conversation_id,
-        customer_name || 'Khách vãng lai',
-        phone_number || '',
-        note || '',
+        'Khách mới (Messenger)', // Mặc định cho Lead
+        '',                      // Phone trống
+        '',                      // Note trống
         user_id || 'user-unknown'
       ]
     );
 
-    // C. Gửi Email thông báo (Chỉ chạy 1 lần duy nhất tại đây)
+    // C. Gửi Email thông báo đơn giản
     if (targetTenantEmail) {
-      console.log("📧 Phát hiện khách mới -> Đang gửi Email...");
       try {
         await sendLeadEmail(targetTenantEmail, {
-          customer_name: customer_name || 'Khách mới',
-          phone_number: phone_number || '---',
-          need: note || ''
+          customer_name: 'Khách mới',
+          phone_number: 'Đang chat...',
+          need: 'Vừa bắt đầu tương tác với Bot'
         });
       } catch (e) { console.error("⚠️ Lỗi gửi mail:", e); }
     }
